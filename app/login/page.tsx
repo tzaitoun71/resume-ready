@@ -1,3 +1,5 @@
+// app/login/page.tsx
+
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -17,6 +19,7 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase"; // Import Firebase configuration
 import { useRouter } from 'next/navigation';
+import { useUser } from "../context/UserContext";
 
 const primaryColor = "#4C51BF";
 
@@ -26,11 +29,10 @@ const LoginPage: React.FC = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const { user, setUser } = useUser();  // Use context to manage user state
   const router = useRouter();
 
   useEffect(() => {
-    // Monitor authentication state changes
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -40,7 +42,7 @@ const LoginPage: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [setUser]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -56,7 +58,8 @@ const LoginPage: React.FC = () => {
         const payload = { 
           userId: newUser.uid, // Firebase UID
           firstName, 
-          lastName 
+          lastName,
+          membership: "free"  // Initialize membership to "free"
         };
 
         // Send data to the backend to create a new user in MongoDB

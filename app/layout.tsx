@@ -30,13 +30,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {(pathname !== '/' && pathname !== '/login') ? (
+        {/* Check if the current pathname is neither '/' nor '/login' */}
+        {pathname !== '/' && pathname !== '/login' ? (
           <>
-            <Navbar /> {/* Conditionally render the Navbar */}
-            <UserProvider>{children}</UserProvider>
+            <UserProvider>
+              <Navbar /> {/* Conditionally render the Navbar */}
+              {children}
+            </UserProvider>
           </>
         ) : (
-          children
+          <UserProvider>{children}</UserProvider>
         )}
       </body>
     </html>
