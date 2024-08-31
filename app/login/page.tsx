@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Container,
   Typography,
@@ -19,10 +19,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
 } from "firebase/auth";
 import { auth } from "../firebase"; // Import Firebase configuration
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 
 const primaryColor = "#4C51BF";
@@ -34,59 +33,85 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { user, setUser, loading } = useUser();  // Use context to manage user state, add loading
+  const { user, setUser, loading } = useUser(); // Use context to manage user state
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
+
     if (isSignup) {
+      // Sign up logic
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         const newUser = userCredential.user;
-        console.log("Firebase signup successful:", newUser);
-        setUser(newUser);
 
-        const payload = { 
-          userId: newUser.uid, // Firebase UID
-          email: newUser.email,
-          firstName, 
-          lastName,
-          membership: "free"  // Initialize membership to "free"
-        };
+        if (newUser) {
+          // Send user data to your signup endpoint to store in MongoDB
+          const response = await fetch("/api/users/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: newUser.uid,
+              email,
+              firstName,
+              lastName,
+            }),
+          });
 
-        const response = await fetch('/api/users/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+          if (!response.ok) throw new Error("Failed to save user data in MongoDB");
 
-        if (!response.ok) {
-          const data = await response.json();
-          console.log("Signup error response:", data);
-          throw new Error(data.error || 'Something went wrong');
+          // Fetch the user data after successful signup and storage
+          const userData = await fetchUserData(newUser.uid);
+          setUser(userData); // Update context with user data
+
+          router.push("/dashboard");
         }
-
-        console.log("User signup data sent to MongoDB");
-        router.refresh(); // Refresh the page after successful signup
       } catch (error: any) {
         console.error("Error signing up:", error);
         setErrorMessage(error.message); // Show error message
       }
     } else {
+      // Login logic
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         const loggedInUser = userCredential.user;
 
-        if (loggedInUser) router.push('/dashboard')
-        console.log("Firebase login successful:", loggedInUser);
-        
+        if (loggedInUser) {
+          const userData = await fetchUserData(loggedInUser.uid);
+          setUser(userData); // Update context with user data
+
+          router.push("/dashboard");
+        }
       } catch (error: any) {
         console.error("Error logging in:", error);
-        setErrorMessage('Invalid email or password. Please try again.'); // Show error message
+        setErrorMessage("Invalid email or password. Please try again."); // Show error message
       }
+    }
+  };
+
+  const fetchUserData = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch user data");
+      }
+      const userData = await res.json();
+      console.log("Fetched User Data:", userData);
+      return userData; // Return fetched user data
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setErrorMessage("Error fetching user data.");
+      return null; // Return null if fetching fails
     }
   };
 
@@ -94,7 +119,7 @@ const LoginPage: React.FC = () => {
     await signOut(auth);
     console.log("User signed out");
     setUser(null);
-    router.push('/login'); // Redirect to login page after signout
+    router.push("/login"); // Redirect to login page after signout
   };
 
   // Show loading indicator if user data is still loading
@@ -102,10 +127,10 @@ const LoginPage: React.FC = () => {
     return (
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
         }}
       >
         <CircularProgress />
@@ -149,19 +174,19 @@ const LoginPage: React.FC = () => {
       {/* Login/Signup Form Section */}
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#ffffff',
-          padding: '40px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-          marginBottom: '40px',
-          maxWidth: '400px',
-          width: '100%',
-          height: '500px',  // Ensures both forms have the same height
-          transition: 'height 0.3s ease',  // Smooth transition when switching forms
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#ffffff",
+          padding: "40px",
+          borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+          marginBottom: "40px",
+          maxWidth: "400px",
+          width: "100%",
+          height: "500px", // Ensures both forms have the same height
+          transition: "height 0.3s ease", // Smooth transition when switching forms
         }}
       >
         {user ? (
@@ -183,11 +208,14 @@ const LoginPage: React.FC = () => {
           </Button>
         ) : (
           <>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
-              {isSignup ? 'Sign Up' : 'Log In'}
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: "bold", color: "#333", marginBottom: "20px" }}
+            >
+              {isSignup ? "Sign Up" : "Log In"}
             </Typography>
             {errorMessage && (
-              <Typography color="error" sx={{ marginBottom: '20px' }}>
+              <Typography color="error" sx={{ marginBottom: "20px" }}>
                 {errorMessage}
               </Typography>
             )}
@@ -201,7 +229,7 @@ const LoginPage: React.FC = () => {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  sx={{ marginBottom: '20px' }}
+                  sx={{ marginBottom: "20px" }}
                 />
                 <TextField
                   label="Last Name"
@@ -211,7 +239,7 @@ const LoginPage: React.FC = () => {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  sx={{ marginBottom: '20px' }}
+                  sx={{ marginBottom: "20px" }}
                 />
               </>
             )}
@@ -223,7 +251,7 @@ const LoginPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              sx={{ marginBottom: '20px' }}
+              sx={{ marginBottom: "20px" }}
             />
             <TextField
               label="Password"
@@ -233,7 +261,7 @@ const LoginPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              sx={{ marginBottom: '20px' }}
+              sx={{ marginBottom: "20px" }}
             />
             <Button
               onClick={handleSubmit}
@@ -249,7 +277,7 @@ const LoginPage: React.FC = () => {
                 },
               }}
             >
-              {isSignup ? 'Sign Up' : 'Log In'}
+              {isSignup ? "Sign Up" : "Log In"}
             </Button>
             <Button
               onClick={() => setIsSignup(!isSignup)}
@@ -262,7 +290,9 @@ const LoginPage: React.FC = () => {
                 },
               }}
             >
-              {isSignup ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+              {isSignup
+                ? "Already have an account? Log In"
+                : "Don't have an account? Sign Up"}
             </Button>
           </>
         )}
@@ -299,7 +329,8 @@ const LoginPage: React.FC = () => {
               Interview Preparation Assistance
             </Typography>
             <Typography color="textSecondary">
-              Get tailored interview questions and answers based on job descriptions.
+              Get tailored interview questions and answers based on job
+              descriptions.
             </Typography>
           </Paper>
         </Grid>
@@ -323,7 +354,8 @@ const LoginPage: React.FC = () => {
               Cover Letter Generator
             </Typography>
             <Typography color="textSecondary">
-              Create personalized cover letters tailored to each job application.
+              Create personalized cover letters tailored to each job
+              application.
             </Typography>
           </Paper>
         </Grid>
@@ -347,7 +379,8 @@ const LoginPage: React.FC = () => {
               Analytics Dashboard
             </Typography>
             <Typography color="textSecondary">
-              Track your application progress, from submission to interviews and offers.
+              Track your application progress, from submission to interviews and
+              offers.
             </Typography>
           </Paper>
         </Grid>
@@ -371,7 +404,8 @@ const LoginPage: React.FC = () => {
               Resume Enhancement Tips
             </Typography>
             <Typography color="textSecondary">
-              Receive suggestions to refine your resume based on job descriptions.
+              Receive suggestions to refine your resume based on job
+              descriptions.
             </Typography>
           </Paper>
         </Grid>

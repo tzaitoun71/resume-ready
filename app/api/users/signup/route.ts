@@ -20,15 +20,21 @@ export async function POST(req: Request) {
     const db = client.db('resume-ready'); // Use your actual database name
     const usersCollection = db.collection('users');
 
+    // Insert user data into the 'users' collection with initialized fields
     await usersCollection.insertOne({
       userId, // Use the Firebase UID directly
       email,
       firstName,
       lastName,
       resume: '',
-      applications: [],
-      coverLetter: '',
-      interviewQuestions: [],
+      applications: [
+        {
+          resumeFeedback: "", // Initialize as an empty string
+          coverLetter: "",    // Initialize as an empty string
+          interviewQuestions: [], // Initialize as an empty array
+        },
+      ],
+      createdAt: new Date()
     });
 
     return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
