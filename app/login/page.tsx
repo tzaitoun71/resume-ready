@@ -1,5 +1,3 @@
-// app/login/page.tsx
-
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -11,12 +9,18 @@ import {
   Grid,
   Paper,
   TextField,
+  CircularProgress,
 } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
 import { auth } from "../firebase"; // Import Firebase configuration
 import { useRouter } from 'next/navigation';
 import { useUser } from "../context/UserContext";
@@ -29,14 +33,17 @@ const LoginPage: React.FC = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { user, setUser } = useUser();  // Use context to manage user state
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { user, setUser, loading } = useUser();  // Use context to manage user state, add loading
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
+        console.log("Firebase User logged in:", currentUser);
+        fetchUserData(currentUser.uid); // Fetch user data from MongoDB
       } else {
+        console.log("No Firebase user logged in");
         setUser(null);
       }
     });
@@ -44,17 +51,33 @@ const LoginPage: React.FC = () => {
     return () => unsubscribe();
   }, [setUser]);
 
+  const fetchUserData = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`);
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData.user);
+        router.push('/dashboard'); // Redirect to dashboard after fetching user data
+      } else {
+        console.error("Failed to fetch user data from MongoDB:", await response.text());
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setUser(null);
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
     if (isSignup) {
       try {
-        // Create Firebase user
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
+        console.log("Firebase signup successful:", newUser);
         setUser(newUser);
 
-        // Prepare payload for the backend
         const payload = { 
           userId: newUser.uid, // Firebase UID
           firstName, 
@@ -62,7 +85,6 @@ const LoginPage: React.FC = () => {
           membership: "free"  // Initialize membership to "free"
         };
 
-        // Send data to the backend to create a new user in MongoDB
         const response = await fetch('/api/users/signup', {
           method: 'POST',
           headers: {
@@ -71,46 +93,65 @@ const LoginPage: React.FC = () => {
           body: JSON.stringify(payload),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
+          const data = await response.json();
+          console.log("Signup error response:", data);
           throw new Error(data.error || 'Something went wrong');
         }
 
-        router.push('/dashboard'); // Redirect after successful signup
-      } catch (error) {
+        console.log("User signup data sent to MongoDB");
+        router.refresh(); // Refresh the page after successful signup
+      } catch (error: any) {
         console.error("Error signing up:", error);
+        setErrorMessage(error.message); // Show error message
       }
     } else {
-      // Handle login
       try {
-        const response = await fetch('/api/users/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const loggedInUser = userCredential.user;
+        console.log("Firebase login successful:", loggedInUser);
+        setUser(loggedInUser);
 
-        const data = await response.json();
-
+        const response = await fetch(`/api/users/${loggedInUser.uid}`);
         if (!response.ok) {
-          throw new Error(data.error || 'Something went wrong');
+          const data = await response.json();
+          console.log("Fetch user data error response:", data);
+          throw new Error(data.error || 'Failed to fetch user data');
         }
 
+        const data = await response.json();
+        console.log("MongoDB user data fetched:", data);
         setUser(data.user);
-        router.push('/dashboard');
-      } catch (error) {
+        router.refresh(); // Refresh the page after successful login
+      } catch (error: any) {
         console.error("Error logging in:", error);
+        setErrorMessage('Invalid email or password. Please try again.'); // Show error message
       }
     }
   };
 
   const handleSignOut = async () => {
     await signOut(auth);
+    console.log("User signed out");
     setUser(null);
     router.push('/login'); // Redirect to login page after signout
   };
+
+  // Show loading indicator if user data is still loading
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container
@@ -163,11 +204,33 @@ const LoginPage: React.FC = () => {
           transition: 'height 0.3s ease',  // Smooth transition when switching forms
         }}
       >
-        {!user ? (
+        {user ? (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleSignOut}
+            sx={{
+              padding: "10px 30px",
+              borderRadius: "30px",
+              backgroundColor: "#d32f2f",
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "#9a0007",
+              },
+            }}
+          >
+            Sign Out
+          </Button>
+        ) : (
           <>
             <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#333', marginBottom: '20px' }}>
               {isSignup ? 'Sign Up' : 'Log In'}
             </Typography>
+            {errorMessage && (
+              <Typography color="error" sx={{ marginBottom: '20px' }}>
+                {errorMessage}
+              </Typography>
+            )}
             {isSignup && (
               <>
                 <TextField
@@ -242,23 +305,6 @@ const LoginPage: React.FC = () => {
               {isSignup ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
             </Button>
           </>
-        ) : (
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleSignOut}
-            sx={{
-              padding: "10px 30px",
-              borderRadius: "30px",
-              backgroundColor: "#d32f2f",
-              color: "#fff",
-              "&:hover": {
-                backgroundColor: "#9a0007",
-              },
-            }}
-          >
-            Sign Out
-          </Button>
         )}
       </Box>
 

@@ -1,16 +1,12 @@
+// app/layout.tsx
 'use client';
 
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { analytics } from "./firebase";
 import { logEvent } from "firebase/analytics";
 import { UserProvider } from "./context/UserContext";
 import { usePathname } from 'next/navigation';
 import Navbar from "./components/Navbar"; 
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
@@ -29,18 +25,12 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {/* Check if the current pathname is neither '/' nor '/login' */}
-        {pathname !== '/' && pathname !== '/login' ? (
-          <>
-            <UserProvider>
-              <Navbar /> {/* Conditionally render the Navbar */}
-              {children}
-            </UserProvider>
-          </>
-        ) : (
-          <UserProvider>{children}</UserProvider>
-        )}
+      <body>
+        {/* Wrap all children in UserProvider to ensure context is available everywhere */}
+        <UserProvider>
+          {pathname !== '/' && pathname !== '/login' ? <Navbar /> : null} {/* Conditionally render Navbar */}
+          {children}
+        </UserProvider>
       </body>
     </html>
   );

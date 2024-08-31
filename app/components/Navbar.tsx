@@ -3,25 +3,35 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, IconButton, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'; 
-import LogoutIcon from '@mui/icons-material/Logout'; 
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LogoutIcon from '@mui/icons-material/Logout';
 import ContactPageIcon from '@mui/icons-material/ContactPage';
+import { useUser } from '../context/UserContext'; // Import your UserContext hook
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase'; // Import Firebase auth
 
 const Navbar: React.FC = () => {
   const router = useRouter();
+  const { signOutUser } = useUser(); // Use signOutUser function from context
 
-  const handleLogout = () => {
-    // Logic to handle logout
-    console.log('User logged out');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Log out from Firebase
+      signOutUser(); // Update context and redirect to login page
+      console.log('User logged out');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const handleBuyNow = () => {
     // Logic to handle Buy Now
     console.log('Redirect to Buy Now page');
+    router.push('/buy'); // Example navigation, adjust to your actual route
   };
 
   return (
-    <AppBar position="static" color="transparent" elevation={0}>
+    <AppBar position="fixed" color="transparent" elevation={1} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
       <Toolbar sx={{ justifyContent: 'space-between', backgroundColor: '#ffffff', padding: '10px 30px' }}>
         {/* Logo or Title */}
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => router.push('/dashboard')}>

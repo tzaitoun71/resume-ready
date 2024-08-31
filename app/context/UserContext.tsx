@@ -1,22 +1,13 @@
-// app/context/UserContext.tsx
 'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-  Dispatch,
-  SetStateAction,
-} from 'react';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 interface UserContextProps {
-  user: any; // Allows storing additional attributes from MongoDB
-  setUser: Dispatch<SetStateAction<any>>;
+  user: any;
+  setUser: React.Dispatch<React.SetStateAction<any>>;
   loading: boolean;
   signOutUser: () => Promise<void>;
 }
@@ -29,30 +20,41 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const router = useRouter();
 
   useEffect(() => {
+    console.log("Auth state change listener setup");
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        console.log('Firebase User logged in:', firebaseUser);
+        setLoading(true); // Set loading while fetching MongoDB data
         try {
-          // Fetch additional user data from MongoDB
+          // Fetch user data from MongoDB
           const response = await fetch(`/api/users/${firebaseUser.uid}`);
-          const userData = await response.json();
+          console.log('Fetch response: ', response);
 
-          setUser({
-            ...firebaseUser,
-            ...userData,  // Merge MongoDB user data with Firebase user data
-          });
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('MongoDB user data fetched:', userData);
+            setUser({ ...firebaseUser, ...userData });
+          } else {
+            console.error('Failed to fetch user data from MongoDB, setting Firebase user data only');
+            setUser(firebaseUser); // Fallback to only Firebase user data if fetch fails
+          }
         } catch (error) {
           console.error('Failed to fetch user data:', error);
+          setUser(firebaseUser); // Fallback to only Firebase user data if fetch fails
+        } finally {
+          setLoading(false);
         }
       } else {
+        console.log('No user is logged in');
         setUser(null);
+        setLoading(false);
         router.push('/login');
       }
-      setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [router]);
+  }, [auth, router]);
 
   const signOutUser = async () => {
     setLoading(true);
@@ -69,10 +71,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// Custom hook to use the UserContext
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;

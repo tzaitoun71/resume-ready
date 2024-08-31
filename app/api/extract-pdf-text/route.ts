@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { PdfReader } from 'pdfreader';
 import OpenAI from 'openai';
 import clientPromise from '../../MongoDB';
-import { Readable } from 'stream';
 
 // Initialize OpenAI with API Key
 const openai = new OpenAI({
@@ -22,30 +21,36 @@ export async function POST(req: Request) {
     // Convert file to ArrayBuffer and then to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Parse the PDF using pdfreader
-    const pdfReader = new PdfReader();
-    let extractedText = '';
+    // Function to parse PDF and extract text as a Promise
+    const extractTextFromPDF = (buffer: Buffer): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const pdfReader = new PdfReader();
+        let extractedText = '';
 
-    // Convert buffer to a readable stream
-    const readableStream = new Readable();
-    readableStream.push(buffer);
-    readableStream.push(null);
+        pdfReader.parseBuffer(buffer, (err, item) => {
+          if (err) {
+            console.error("Error parsing PDF:", err);
+            reject(err); // Reject if there's an error
+          } else if (!item) {
+            // End of PDF buffer
+            console.log("PDF text extraction completed.");
+            resolve(extractedText);
+          } else if (item.text) {
+            extractedText += `${item.text} `;
+          }
+        });
+      });
+    };
 
-    // Process the readable stream
-    pdfReader.parseBuffer(buffer, (err, item) => {
-      if (err) {
-        console.error("Error parsing PDF:", err);
-        return;
-      }
-      if (!item) {
-        console.log("End of PDF file");
-      } else if (item.text) {
-        extractedText += `${item.text} `;
-      }
-    });
+    // Wait for the extracted text from PDF
+    const extractedText = await extractTextFromPDF(buffer);
 
-    // Ensure the text extraction process is completed before continuing
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Adding a delay to wait for text extraction to complete
+    if (!extractedText) {
+      console.error("No text extracted from PDF.");
+      return NextResponse.json({ error: 'Failed to extract text from PDF' }, { status: 500 });
+    }
+
+    console.log("Extracted PDF text:", extractedText);
 
     // Send extracted text to OpenAI to categorize and structure
     const response = await openai.chat.completions.create({
@@ -53,7 +58,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'You are an assistant that organizes text into a structured and categorized format. Do not add any messages at the begining such as "Here is a structured and categorized format" Just get straight to it.',
+          content: 'You are an assistant that organizes the following text into a structured format similar to a resume layout. Use commas to separate items where appropriate, and list information in a clear, concise manner with each point or category distinctly separated. Maintain the original order of the text without adding introductory messages or additional instructions.',
         },
         {
           role: 'user',
@@ -65,15 +70,22 @@ export async function POST(req: Request) {
 
     const organizedText = response.choices?.[0]?.message?.content || '';
 
+    if (!organizedText) {
+      console.error("Failed to receive organized text from OpenAI.");
+      return NextResponse.json({ error: 'Failed to organize text' }, { status: 500 });
+    }
+
     // Store the organized text in MongoDB
     const client = await clientPromise;
     const db = client.db('resume-ready');
     const usersCollection = db.collection('users');
 
     await usersCollection.updateOne(
-      { userId }, // Use the fetched userId here
+      { userId },
       { $set: { resume: organizedText } }
     );
+
+    console.log("Resume updated successfully in MongoDB.");
 
     return NextResponse.json({ message: 'PDF processed and saved successfully', organizedText }, { status: 200 });
   } catch (error: any) {
