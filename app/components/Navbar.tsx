@@ -46,8 +46,8 @@ const Navbar: React.FC = () => {
           <Button color="inherit" onClick={() => router.push('/dashboard')} sx={{ marginRight: '20px', color: '#333' }}>
             Dashboard
           </Button>
-          <Button color="inherit" onClick={() => router.push('/profile')} sx={{ marginRight: '20px', color: '#333' }}>
-            Profile
+          <Button color="inherit" onClick={() => router.push('/resume')} sx={{ marginRight: '20px', color: '#333' }}>
+            Resume
           </Button>
           <Button
             variant="contained"

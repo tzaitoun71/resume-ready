@@ -14,7 +14,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useUser } from '../context/UserContext';
 import ReactMarkdown from 'react-markdown';
 
-const ProfilePage: React.FC = () => {
+const ResumePage: React.FC = () => {
   const { user, setUser, loading } = useUser(); // Add setUser to update context
   const [resume, setResume] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -200,4 +200,4 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage;
+export default ResumePage;
