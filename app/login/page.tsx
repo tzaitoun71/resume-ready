@@ -37,37 +37,6 @@ const LoginPage: React.FC = () => {
   const { user, setUser, loading } = useUser();  // Use context to manage user state, add loading
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        console.log("Firebase User logged in:", currentUser);
-        fetchUserData(currentUser.uid); // Fetch user data from MongoDB
-      } else {
-        console.log("No Firebase user logged in");
-        setUser(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [setUser]);
-
-  const fetchUserData = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/users/${userId}`);
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData.user);
-        router.push('/dashboard'); // Redirect to dashboard after fetching user data
-      } else {
-        console.error("Failed to fetch user data from MongoDB:", await response.text());
-        setUser(null);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      setUser(null);
-    }
-  };
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
@@ -80,6 +49,7 @@ const LoginPage: React.FC = () => {
 
         const payload = { 
           userId: newUser.uid, // Firebase UID
+          email: newUser.email,
           firstName, 
           lastName,
           membership: "free"  // Initialize membership to "free"
@@ -109,20 +79,10 @@ const LoginPage: React.FC = () => {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const loggedInUser = userCredential.user;
+
+        if (loggedInUser) router.push('/dashboard')
         console.log("Firebase login successful:", loggedInUser);
-        setUser(loggedInUser);
-
-        const response = await fetch(`/api/users/${loggedInUser.uid}`);
-        if (!response.ok) {
-          const data = await response.json();
-          console.log("Fetch user data error response:", data);
-          throw new Error(data.error || 'Failed to fetch user data');
-        }
-
-        const data = await response.json();
-        console.log("MongoDB user data fetched:", data);
-        setUser(data.user);
-        router.refresh(); // Refresh the page after successful login
+        
       } catch (error: any) {
         console.error("Error logging in:", error);
         setErrorMessage('Invalid email or password. Please try again.'); // Show error message

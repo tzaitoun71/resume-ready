@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log('Request body:', body);
 
-    const { userId, firstName, lastName } = body;
+    const { userId, email, firstName, lastName } = body;
 
     // Ensure all fields are provided
     if (!userId || !firstName || !lastName) {
@@ -22,6 +22,7 @@ export async function POST(req: Request) {
 
     await usersCollection.insertOne({
       userId, // Use the Firebase UID directly
+      email,
       firstName,
       lastName,
       resume: '',
