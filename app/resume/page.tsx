@@ -41,7 +41,7 @@ const ResumePage: React.FC = () => {
         // Prepare form data for upload
         const formData = new FormData();
         formData.append('file', resume);
-        formData.append('userId', user.uid);
+        formData.append('userId', user.userId);
 
         const response = await fetch('/api/extract-pdf-text', {
           method: 'POST',
@@ -53,7 +53,7 @@ const ResumePage: React.FC = () => {
         if (response.ok) {
           const organizedText = data.organizedText;  // Correctly extract organizedText from data
           if (organizedText) {
-            console.log("Extracted PDF text:", organizedText);
+            console.log("Extracted PDF text Client Side:", organizedText);
             setResumeContent(organizedText); // Update resume content
             setUser({ ...user, resume: organizedText });  // Update user context immediately
             setHasResume(true); // Set the state after a successful upload

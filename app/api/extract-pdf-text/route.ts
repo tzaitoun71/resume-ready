@@ -5,7 +5,7 @@ import clientPromise from '../../MongoDB';
 
 // Initialize OpenAI with API Key
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Ensure the API key is correctly set in your environment variables
+  apiKey: process.env.OPENAI_API_KEY, 
 });
 
 export async function POST(req: Request) {
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     const data = await req.formData();
     const file = data.get('file') as File;
     const userId = data.get('userId');
+    console.log("UserID: " + userId);
 
     if (!file || !userId) {
       return NextResponse.json({ error: 'File and userId are required' }, { status: 400 });
@@ -69,23 +70,44 @@ export async function POST(req: Request) {
     });
 
     const organizedText = response.choices?.[0]?.message?.content || '';
+    console.log("Organized Text from OpenAI:", organizedText);
 
     if (!organizedText) {
       console.error("Failed to receive organized text from OpenAI.");
       return NextResponse.json({ error: 'Failed to organize text' }, { status: 500 });
     }
 
-    // Store the organized text in MongoDB
+    // Connect to MongoDB and prepare for update
     const client = await clientPromise;
     const db = client.db('resume-ready');
     const usersCollection = db.collection('users');
 
-    await usersCollection.updateOne(
+    console.log("Attempting to update MongoDB with userId:", userId);
+
+    // Use a query to check if user exists before updating
+    const existingUser = await usersCollection.findOne({ userId });
+    if (!existingUser) {
+      console.error("User not found in MongoDB with userId:", userId);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Update user's resume in MongoDB
+    const updateResult = await usersCollection.updateOne(
       { userId },
       { $set: { resume: organizedText } }
     );
 
-    console.log("Resume updated successfully in MongoDB.");
+    if (updateResult.matchedCount === 0) {
+      console.error("No user document matched the query for userId:", userId);
+      return NextResponse.json({ error: 'Failed to update resume, user not found' }, { status: 404 });
+    }
+
+    if (updateResult.modifiedCount === 0) {
+      console.warn("User document found but resume not updated for userId:", userId);
+      return NextResponse.json({ error: 'Resume was not updated' }, { status: 500 });
+    }
+
+    console.log("Resume updated successfully in MongoDB for userId:", userId);
 
     return NextResponse.json({ message: 'PDF processed and saved successfully', organizedText }, { status: 200 });
   } catch (error: any) {

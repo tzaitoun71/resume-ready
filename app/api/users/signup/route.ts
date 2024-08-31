@@ -27,14 +27,7 @@ export async function POST(req: Request) {
       firstName,
       lastName,
       resume: '',
-      applications: [
-        {
-          resumeFeedback: "", // Initialize as an empty string
-          coverLetter: "",    // Initialize as an empty string
-          interviewQuestions: [], // Initialize as an empty array
-        },
-      ],
-      createdAt: new Date()
+      applications: [],
     });
 
     return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
