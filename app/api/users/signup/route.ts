@@ -28,6 +28,7 @@ export async function POST(req: Request) {
       lastName,
       resume: '',
       applications: [],
+      membership: 'free'
     });
 
     return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
