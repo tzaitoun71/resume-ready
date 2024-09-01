@@ -2,7 +2,15 @@
 
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Container, Tabs, Tab, useTheme, useMediaQuery } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Container,
+  Tabs,
+  Tab,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 import { useUser } from "../context/UserContext";
 import ResumeFeedback from "../components/ResumeFeedback";
 import CoverLetter from "../components/CoverLetter";
@@ -40,9 +48,9 @@ const JobDetails: React.FC = () => {
         alignItems: "center",
         background: "linear-gradient(135deg, #f0f4ff 0%, #fafaff 100%)",
         paddingTop: isSmallScreen ? "60px" : "80px",
-        paddingBottom: isSmallScreen ? "40px" : "60px", // Added paddingBottom for spacing at bottom
+        paddingBottom: isSmallScreen ? "40px" : "60px",
         boxSizing: "border-box",
-        overflow: "auto",
+        overflow: "auto", // Allow scrolling for the container
       }}
     >
       {/* Main Box */}
@@ -51,8 +59,8 @@ const JobDetails: React.FC = () => {
           width: isSmallScreen ? "95%" : "80%",
           maxWidth: "1400px",
           minWidth: isSmallScreen ? "90%" : "80%",
-          height: isSmallScreen ? "auto" : "85vh",
-          maxHeight: "90vh",
+          height: "85vh", // Set a specific height for the main box to enforce scrolling
+          maxHeight: "85vh", // Limit height to 85% of viewport height
           borderRadius: "8px",
           boxShadow: 2,
           bgcolor: "white",
@@ -62,8 +70,8 @@ const JobDetails: React.FC = () => {
           justifyContent: "flex-start",
           alignItems: "center",
           marginTop: isSmallScreen ? "10px" : "20px",
-          overflow: "hidden",
-          marginBottom: "40px", // Added marginBottom for spacing from the bottom of the container
+          overflowY: "auto", // Enable vertical scrolling
+          marginBottom: "40px",
         }}
       >
         <Typography variant="h4" component="h1" gutterBottom>
@@ -75,7 +83,8 @@ const JobDetails: React.FC = () => {
             {application?.status}
           </span>
         </Typography>
-        <Typography variant="body1" sx={{ mb: 3 }}>
+        {/* Preserve original spacing for job description */}
+        <Typography variant="body1" sx={{ mb: 3, whiteSpace: "pre-line" }}>
           {application?.jobDescription}
         </Typography>
 
@@ -87,21 +96,41 @@ const JobDetails: React.FC = () => {
           sx={{ borderBottom: 1, borderColor: "divider", marginBottom: 2 }}
           TabIndicatorProps={{ style: { backgroundColor: "#4C51BF" } }}
         >
-          <Tab label="RESUME FEEDBACK" sx={{ color: activeTab === 0 ? "#4C51BF" : "gray" }} />
-          <Tab label="COVER LETTER" sx={{ color: activeTab === 1 ? "#4C51BF" : "gray" }} />
-          <Tab label="INTERVIEW QUESTIONS" sx={{ color: activeTab === 2 ? "#4C51BF" : "gray" }} />
+          <Tab
+            label="RESUME FEEDBACK"
+            sx={{ color: activeTab === 0 ? "#4C51BF" : "gray" }}
+          />
+          <Tab
+            label="COVER LETTER"
+            sx={{ color: activeTab === 1 ? "#4C51BF" : "gray" }}
+          />
+          <Tab
+            label="INTERVIEW QUESTIONS"
+            sx={{ color: activeTab === 2 ? "#4C51BF" : "gray" }}
+          />
         </Tabs>
 
+        {/* Content Box for Tabs */}
         <Box
           sx={{
             width: "100%",
-            overflowY: "auto",
+            overflowY: "auto", // Enable vertical scrolling
             flexGrow: 1,
+            paddingRight: "16px", // Add padding to avoid scrollbar overlap
+            maxHeight: "60vh", // Limit height to ensure scrolling is needed
           }}
         >
-          {activeTab === 0 && <ResumeFeedback resumeFeedback={application?.resumeFeedback} />}
-          {activeTab === 1 && <CoverLetter coverLetter={application?.coverLetter} />}
-          {activeTab === 2 && <InterviewQuestions interviewQuestions={application?.interviewQuestions} />}
+          {activeTab === 0 && (
+            <ResumeFeedback resumeFeedback={application?.resumeFeedback} />
+          )}
+          {activeTab === 1 && (
+            <CoverLetter coverLetter={application?.coverLetter} />
+          )}
+          {activeTab === 2 && (
+            <InterviewQuestions
+              interviewQuestions={application?.interviewQuestions}
+            />
+          )}
         </Box>
       </Box>
     </Container>
