@@ -33,8 +33,9 @@ import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ImageIcon from "@mui/icons-material/Image";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
-import AddIcon from '@mui/icons-material/Add';
+import AddIcon from "@mui/icons-material/Add";
 import { useUser } from "../context/UserContext";
+import { useRouter } from "next/navigation"; 
 
 const Dashboard: React.FC = () => {
   const { user, setUser, loading } = useUser();
@@ -49,6 +50,7 @@ const Dashboard: React.FC = () => {
   
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter(); // Initialize router
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -117,7 +119,8 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDelete = async (applicationId: string) => {
+  const handleDelete = async (event: React.MouseEvent, applicationId: string) => {
+    event.stopPropagation(); // Prevent the click event from bubbling up to the row
     try {
       const response = await fetch("/api/applications/delete", {
         method: "POST",
@@ -149,6 +152,7 @@ const Dashboard: React.FC = () => {
     event: React.ChangeEvent<{ value: unknown }>,
     index: number
   ) => {
+    event.stopPropagation(); // Prevent the click event from bubbling up to the row
     const newStatus = event.target.value as string;
     const updatedApplications = [...applications];
     updatedApplications[index].status = newStatus;
@@ -175,6 +179,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const navigateToJobDetails = (userId: string, jobId: string) => {
+    router.push(`/${userId}_${jobId}`);
+  };
+
   if (loading || loadingApplications) {
     return (
       <Box
@@ -199,6 +207,15 @@ const Dashboard: React.FC = () => {
       (field) => field.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  const formatDate = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    };
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(date));
+  };
 
   return (
     <Container
@@ -315,8 +332,10 @@ const Dashboard: React.FC = () => {
               <ThumbUpAltIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {
-                  applications.filter((app) => app.status === "Received Offer")
-                    .length
+                  applications.filter(
+                    (app) =>
+                      app.status === "Received Offer" || app.status === "Accepted Offer"
+                  ).length
                 }{" "}
                 Offers
               </Typography>
@@ -330,7 +349,7 @@ const Dashboard: React.FC = () => {
             width: "100%",
             display: "flex",
             justifyContent: "center",
-            mb: 1,
+            mb: 2,
             mt: 2,
           }}
         >
@@ -361,6 +380,11 @@ const Dashboard: React.FC = () => {
                     <SearchIcon />
                   </InputAdornment>
                 ),
+                sx: {
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4C51BF", // Purple outline on focus
+                  },
+                },
               }}
               sx={{ borderRadius: "8px" }}
             />
@@ -387,13 +411,21 @@ const Dashboard: React.FC = () => {
                   <TableCell sx={{ py: 1 }}>Company Name</TableCell>
                   <TableCell sx={{ py: 1 }}>Position</TableCell>
                   <TableCell sx={{ py: 1 }}>Location</TableCell>
+                  <TableCell sx={{ py: 1 }}>Date Created</TableCell>
                   <TableCell sx={{ py: 1 }}>Status</TableCell>
                   <TableCell sx={{ py: 1 }}>Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredApplications.map((application, index) => (
-                  <TableRow key={application.id}>
+                  <TableRow 
+                    key={application.id}
+                    sx={{
+                      cursor: "pointer", // Change cursor on hover
+                      '&:hover': { backgroundColor: "#f0f4ff" }, // Change background color on hover
+                    }}
+                    onClick={() => navigateToJobDetails(user.userId, application.id)} // Navigate on click
+                  >
                     <TableCell sx={{ py: 1 }}>
                       {application.companyName || "Not Specified"}
                     </TableCell>
@@ -404,6 +436,9 @@ const Dashboard: React.FC = () => {
                       {application.location || "Not Specified"}
                     </TableCell>
                     <TableCell sx={{ py: 1 }}>
+                      {formatDate(application.dateCreated)}
+                    </TableCell>
+                    <TableCell sx={{ py: 1 }} onClick={(event) => event.stopPropagation()}>
                       <FormControl fullWidth>
                         <Select
                           value={application.status}
@@ -428,10 +463,13 @@ const Dashboard: React.FC = () => {
                         </Select>
                       </FormControl>
                     </TableCell>
-                    <TableCell sx={{ py: 1 }}>
+                    <TableCell sx={{ py: 1 }} onClick={(event) => event.stopPropagation()}>
                       <IconButton
-                        onClick={() => handleDelete(application.id)}
+                        onClick={(event) => handleDelete(event, application.id)}
                         color="error"
+                        sx={{
+                          cursor: "default", // Change cursor back to default for delete button
+                        }}
                       >
                         <DeleteIcon />
                       </IconButton>

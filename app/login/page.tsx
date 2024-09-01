@@ -140,12 +140,12 @@ const LoginPage: React.FC = () => {
 
   return (
     <Container
-      maxWidth={false} // Remove maxWidth constraint
-      disableGutters // Disable default padding
+      maxWidth={false}
+      disableGutters
       sx={{
         minHeight: "100vh",
-        width: "100vw",  // Full viewport width
-        height: "100vh",  // Full viewport height
+        width: "100vw", // Full viewport width
+        height: "100vh", // Full viewport height
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -154,149 +154,178 @@ const LoginPage: React.FC = () => {
         textAlign: "center",
         padding: "20px",
         boxSizing: "border-box", // Include padding in width/height calculations
+        overflowY: "auto", // Allow scrolling on smaller screens
       }}
     >
-      {/* Header Section */}
-      <Box sx={{ marginBottom: "40px" }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          sx={{ fontWeight: "bold", color: "#333", marginBottom: "20px" }}
-        >
-          ResumeReady
-        </Typography>
-        <Typography
-          variant="h6"
-          color="textSecondary"
-          sx={{ color: "#555", marginBottom: "40px" }}
-        >
-          The easiest way to optimize your job applications and stand out.
-        </Typography>
-      </Box>
-
-      {/* Login/Signup Form Section */}
+      {/* Centering Wrapper for the form */}
       <Box
         sx={{
+          width: "100%",
+          maxWidth: { xs: "90%", sm: "400px", md: "500px" }, // Responsive width
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#ffffff",
-          padding: "30px",
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-          marginBottom: "40px",
-          width: "100%",
-          maxWidth: "400px", // Max width to ensure form is not too wide
+          flexGrow: 1,
+          marginTop: { xs: 2, sm: 4 }, // Add margin top for space on smaller screens
         }}
       >
-        {user ? (
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleSignOut}
+        {/* Header Section */}
+        <Box sx={{ marginBottom: "20px", mt: { xs: "30px", sm: "40px" } }}>
+          <Typography
+            variant="h3"
+            component="h1"
             sx={{
-              padding: "10px 30px",
-              borderRadius: "30px",
-              backgroundColor: "#d32f2f",
-              color: "#fff",
-              "&:hover": {
-                backgroundColor: "#9a0007",
-              },
+              fontWeight: "bold",
+              color: "#333",
+              marginBottom: "20px",
+              fontSize: { xs: "2rem", md: "3rem" }, // Responsive font size
             }}
           >
-            Sign Out
-          </Button>
-        ) : (
-          <>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: "bold", color: "#333", marginBottom: "20px" }}
-            >
-              {isSignup ? "Sign Up" : "Log In"}
-            </Typography>
-            {errorMessage && (
-              <Typography color="error" sx={{ marginBottom: "20px" }}>
-                {errorMessage}
-              </Typography>
-            )}
-            {isSignup && (
-              <>
-                <TextField
-                  label="First Name"
-                  type="text"
-                  fullWidth
-                  variant="outlined"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  sx={{ marginBottom: "20px" }}
-                />
-                <TextField
-                  label="Last Name"
-                  type="text"
-                  fullWidth
-                  variant="outlined"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  sx={{ marginBottom: "20px" }}
-                />
-              </>
-            )}
-            <TextField
-              label="Email Address"
-              type="email"
-              fullWidth
-              variant="outlined"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              sx={{ marginBottom: "20px" }}
-            />
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              variant="outlined"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              sx={{ marginBottom: "20px" }}
-            />
+            ResumeReady
+          </Typography>
+          <Typography
+            variant="h6"
+            color="textSecondary"
+            sx={{
+              color: "#555",
+              marginBottom: "20px",
+              fontSize: { xs: "1rem", md: "1.25rem" }, // Responsive font size
+            }}
+          >
+            The easiest way to optimize your job applications and stand out.
+          </Typography>
+        </Box>
+
+        {/* Login/Signup Form Section */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#ffffff",
+            padding: "30px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+            marginBottom: "20px",
+            width: "100%",
+            maxWidth: "400px",
+            maxHeight: "60vh", // Set maximum height
+            overflowY: "auto", // Enable vertical scrolling inside the form
+            transition: "max-height 0.3s ease",
+          }}
+        >
+          {user ? (
             <Button
-              onClick={handleSubmit}
               variant="contained"
+              color="secondary"
+              onClick={handleSignOut}
               sx={{
-                backgroundColor: primaryColor,
-                color: "#fff",
                 padding: "10px 30px",
                 borderRadius: "30px",
-                marginBottom: "20px",
+                backgroundColor: "#d32f2f",
+                color: "#fff",
                 "&:hover": {
-                  backgroundColor: "#3b3f7a",
+                  backgroundColor: "#9a0007",
                 },
               }}
             >
-              {isSignup ? "Sign Up" : "Log In"}
+              Sign Out
             </Button>
-            <Button
-              onClick={() => setIsSignup(!isSignup)}
-              sx={{
-                textTransform: "none",
-                color: primaryColor,
-                "&:hover": {
-                  backgroundColor: "#f0f0ff",
-                  color: "#3b3f7a",
-                },
-              }}
-            >
-              {isSignup
-                ? "Already have an account? Log In"
-                : "Don't have an account? Sign Up"}
-            </Button>
-          </>
-        )}
+          ) : (
+            <>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: "bold", color: "#333", marginBottom: "20px" }}
+              >
+                {isSignup ? "Sign Up" : "Log In"}
+              </Typography>
+              {errorMessage && (
+                <Typography color="error" sx={{ marginBottom: "20px" }}>
+                  {errorMessage}
+                </Typography>
+              )}
+              {isSignup && (
+                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="First Name"
+                      type="text"
+                      fullWidth
+                      variant="outlined"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Last Name"
+                      type="text"
+                      fullWidth
+                      variant="outlined"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                </Grid>
+              )}
+              <TextField
+                label="Email Address"
+                type="email"
+                fullWidth
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                sx={{ marginBottom: "20px" }}
+              />
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                sx={{ marginBottom: "20px" }}
+              />
+              <Button
+                onClick={handleSubmit}
+                variant="contained"
+                sx={{
+                  backgroundColor: primaryColor,
+                  color: "#fff",
+                  padding: "10px 30px",
+                  borderRadius: "30px",
+                  marginBottom: "20px",
+                  "&:hover": {
+                    backgroundColor: "#3b3f7a",
+                  },
+                }}
+              >
+                {isSignup ? "Sign Up" : "Log In"}
+              </Button>
+              <Button
+                onClick={() => setIsSignup(!isSignup)}
+                sx={{
+                  textTransform: "none",
+                  color: primaryColor,
+                  "&:hover": {
+                    backgroundColor: "#f0f0ff",
+                    color: "#3b3f7a",
+                  },
+                }}
+              >
+                {isSignup
+                  ? "Already have an account? Log In"
+                  : "Don't have an account? Sign Up"}
+              </Button>
+            </>
+          )}
+        </Box>
       </Box>
 
       {/* Features Section */}
@@ -305,7 +334,7 @@ const LoginPage: React.FC = () => {
         spacing={3}
         justifyContent="center"
         alignItems="stretch"
-        sx={{ maxWidth: "900px" }}
+        sx={{ maxWidth: "900px", width: "100%", mb: "30px" }}
       >
         {/* Feature Boxes */}
         <Grid item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
@@ -322,8 +351,8 @@ const LoginPage: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "250px",  // Set consistent height
-              width: "100%",    // Set consistent width
+              height: "250px",
+              width: "100%",
             }}
           >
             <CheckCircleOutlineIcon sx={{ fontSize: 40, color: primaryColor }} />
@@ -353,8 +382,8 @@ const LoginPage: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "250px",  // Set consistent height
-              width: "100%",    // Set consistent width
+              height: "250px",
+              width: "100%",
             }}
           >
             <AssignmentIcon sx={{ fontSize: 40, color: primaryColor }} />
@@ -384,8 +413,8 @@ const LoginPage: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "250px",  // Set consistent height
-              width: "100%",    // Set consistent width
+              height: "250px",
+              width: "100%",
             }}
           >
             <BarChartIcon sx={{ fontSize: 40, color: primaryColor }} />
@@ -415,8 +444,8 @@ const LoginPage: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: "250px",  // Set consistent height
-              width: "100%",    // Set consistent width
+              height: "250px",
+              width: "100%",
             }}
           >
             <AssessmentIcon sx={{ fontSize: 40, color: primaryColor }} />
