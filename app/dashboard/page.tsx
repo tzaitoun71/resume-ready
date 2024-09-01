@@ -22,6 +22,8 @@ import {
   IconButton,
   Grid,
   InputAdornment,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
@@ -31,6 +33,7 @@ import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ImageIcon from "@mui/icons-material/Image";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
+import AddIcon from '@mui/icons-material/Add';
 import { useUser } from "../context/UserContext";
 
 const Dashboard: React.FC = () => {
@@ -43,6 +46,9 @@ const Dashboard: React.FC = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [loadingApplications, setLoadingApplications] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -206,7 +212,7 @@ const Dashboard: React.FC = () => {
         justifyContent: "flex-start",
         alignItems: "center",
         background: "linear-gradient(135deg, #f0f4ff 0%, #fafaff 100%)",
-        paddingTop: "80px", // Reduce padding to compact view
+        paddingTop: isSmallScreen ? "60px" : "80px",
         boxSizing: "border-box",
         overflow: "auto",
       }}
@@ -214,50 +220,54 @@ const Dashboard: React.FC = () => {
       {/* Main Box */}
       <Box
         sx={{
-          width: "90%", // Reduce width for a compact look
-          maxWidth: "1200px", // Reduce maxWidth
-          borderRadius: "8px", // Reduce border radius
-          boxShadow: 2, // Reduce shadow for a subtler effect
+          width: isSmallScreen ? "95%" : "80%",
+          maxWidth: "1400px",
+          minWidth: isSmallScreen ? "90%" : "80%",
+          height: isSmallScreen ? "auto" : "85vh", // Adjust height based on screen size
+          maxHeight: "90vh", // Set a maximum height
+          borderRadius: "8px",
+          boxShadow: 2,
           bgcolor: "white",
-          p: 2, // Reduce padding
+          p: 2,
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
           alignItems: "center",
-          marginTop: "10px", // Reduce margin top
+          marginTop: isSmallScreen ? "10px" : "20px",
           overflow: "hidden",
         }}
       >
-        <Typography variant="h5" component="h1" gutterBottom> {/* Reduce font size */}
+        <Typography variant="h5" component="h1" gutterBottom>
           Welcome back,{" "}
           <span style={{ color: "#4C51BF", fontWeight: "bold" }}>
             {user.firstName} {user.lastName}
           </span>
           !
         </Typography>
-        <Typography variant="body2" sx={{ mb: 1 }}> {/* Reduce font size */}
+        <Typography variant="body2" sx={{ mb: 1 }}>
           Ready to enhance your job applications? Manage your profiles and track
           your progress below.
         </Typography>
 
         {/* Analytics Squares */}
-        <Grid container spacing={1} justifyContent="center"> {/* Reduce spacing */}
+        <Grid container spacing={isSmallScreen ? 1 : 2} justifyContent="center">
           <Grid item xs={12} sm={4}>
             <Box
               sx={{
-                p: 1, // Reduce padding
+                p: 1,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRadius: "8px", // Reduce border radius
-                boxShadow: 2, // Reduce shadow
+                borderRadius: "8px",
+                boxShadow: 2,
                 bgcolor: "white",
-                height: "100px", // Reduce height
+                height: isSmallScreen ? "80px" : "100px",
+                margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <AssignmentIcon sx={{ fontSize: 30, color: "#4C51BF" }} /> {/* Reduce icon size */}
-              <Typography variant="subtitle1" sx={{ mt: 0.5 }}> {/* Reduce font size */}
+              <AssignmentIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
+              <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {applications.length} Applications
               </Typography>
             </Box>
@@ -273,10 +283,11 @@ const Dashboard: React.FC = () => {
                 borderRadius: "8px",
                 boxShadow: 2,
                 bgcolor: "white",
-                height: "100px",
+                height: isSmallScreen ? "80px" : "100px",
+                margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <PersonSearchIcon sx={{ fontSize: 30, color: "#4C51BF" }} />
+              <PersonSearchIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {
                   applications.filter((app) => app.status === "Interviewing")
@@ -297,10 +308,11 @@ const Dashboard: React.FC = () => {
                 borderRadius: "8px",
                 boxShadow: 2,
                 bgcolor: "white",
-                height: "100px",
+                height: isSmallScreen ? "80px" : "100px",
+                margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <ThumbUpAltIcon sx={{ fontSize: 30, color: "#4C51BF" }} />
+              <ThumbUpAltIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {
                   applications.filter((app) => app.status === "Received Offer")
@@ -318,24 +330,25 @@ const Dashboard: React.FC = () => {
             width: "100%",
             display: "flex",
             justifyContent: "center",
-            mb: 1, // Reduce margin bottom
-            mt: 2, // Reduce margin top
+            mb: 1,
+            mt: 2,
           }}
         >
           <Button
             variant="contained"
             color="primary"
             onClick={handleOpen}
-            sx={{ backgroundColor: "#4C51BF", mb: 1 }} // Reduce margin bottom
+            sx={{ backgroundColor: "#4C51BF", mb: 1 }}
+            startIcon={<AddIcon />}
           >
             Add a Position
           </Button>
         </Box>
 
         {/* Search and Table */}
-        <Box sx={{ width: "100%", mb: 1 }}> {/* Reduce margin bottom */}
+        <Box sx={{ width: "100%", mb: 1 }}>
           {/* Search Box */}
-          <Box sx={{ mb: 1 }}> {/* Reduce margin bottom */}
+          <Box sx={{ mb: 1 }}>
             <TextField
               variant="outlined"
               fullWidth
@@ -358,9 +371,9 @@ const Dashboard: React.FC = () => {
         <Box
           sx={{
             width: "100%",
-            flex: 1,
+            maxHeight: "calc(100% - 260px)", // dynamically adjust max height based on screen size
             overflowY: "auto",
-            borderRadius: "8px", // Reduce border radius
+            borderRadius: "8px",
             bgcolor: "white",
           }}
         >
@@ -368,29 +381,29 @@ const Dashboard: React.FC = () => {
             component={Paper}
             sx={{ borderRadius: "8px", overflow: "hidden", boxShadow: "none" }}
           >
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Company Name</TableCell>
-                  <TableCell>Position</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Action</TableCell>
+                  <TableCell sx={{ py: 1 }}>Company Name</TableCell>
+                  <TableCell sx={{ py: 1 }}>Position</TableCell>
+                  <TableCell sx={{ py: 1 }}>Location</TableCell>
+                  <TableCell sx={{ py: 1 }}>Status</TableCell>
+                  <TableCell sx={{ py: 1 }}>Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredApplications.map((application, index) => (
                   <TableRow key={application.id}>
-                    <TableCell>
+                    <TableCell sx={{ py: 1 }}>
                       {application.companyName || "Not Specified"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ py: 1 }}>
                       {application.position || "Not Specified"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ py: 1 }}>
                       {application.location || "Not Specified"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ py: 1 }}>
                       <FormControl fullWidth>
                         <Select
                           value={application.status}
@@ -398,6 +411,8 @@ const Dashboard: React.FC = () => {
                           sx={{
                             backgroundColor: "#f0f4ff",
                             borderRadius: "8px",
+                            height: "30px",
+                            fontSize: "0.875rem",
                           }}
                         >
                           <MenuItem value="Application Submitted">
@@ -413,7 +428,7 @@ const Dashboard: React.FC = () => {
                         </Select>
                       </FormControl>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ py: 1 }}>
                       <IconButton
                         onClick={() => handleDelete(application.id)}
                         color="error"
@@ -438,17 +453,17 @@ const Dashboard: React.FC = () => {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: "90%",
-            maxWidth: 350, // Reduce maxWidth
+            maxWidth: 350,
             bgcolor: "background.paper",
             boxShadow: 24,
-            p: 3, // Reduce padding
-            borderRadius: "8px", // Reduce border radius
+            p: 3,
+            borderRadius: "8px",
           }}
         >
           <Typography variant="h6" component="h2" gutterBottom>
             Add a Position
           </Typography>
-          <Grid container spacing={1} justifyContent="center"> {/* Reduce spacing */}
+          <Grid container spacing={1} justifyContent="center">
             <Grid item xs={4}>
               <Box
                 sx={{
@@ -466,7 +481,7 @@ const Dashboard: React.FC = () => {
                   },
                 }}
               >
-                <CloudUploadIcon sx={{ fontSize: 25, color: "#4C51BF" }} /> {/* Reduce icon size */}
+                <CloudUploadIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
                 <Typography variant="body2">Upload URL</Typography>
               </Box>
             </Grid>
@@ -487,7 +502,7 @@ const Dashboard: React.FC = () => {
                   },
                 }}
               >
-                <ImageIcon sx={{ fontSize: 25, color: "#4C51BF" }} /> {/* Reduce icon size */}
+                <ImageIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
                 <Typography variant="body2">Upload Image</Typography>
               </Box>
             </Grid>
@@ -509,7 +524,7 @@ const Dashboard: React.FC = () => {
                 }}
                 onClick={handleOpenTextModal}
               >
-                <TextFieldsIcon sx={{ fontSize: 25, color: "#4C51BF" }} /> {/* Reduce icon size */}
+                <TextFieldsIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
                 <Typography variant="body2">Upload Text</Typography>
               </Box>
             </Grid>
@@ -526,11 +541,11 @@ const Dashboard: React.FC = () => {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: "90%",
-            maxWidth: 350, // Reduce maxWidth
+            maxWidth: 350,
             bgcolor: "background.paper",
             boxShadow: 24,
-            p: 3, // Reduce padding
-            borderRadius: "8px", // Reduce border radius
+            p: 3,
+            borderRadius: "8px",
           }}
         >
           <Typography variant="h6" component="h2" gutterBottom>
@@ -543,7 +558,7 @@ const Dashboard: React.FC = () => {
             fullWidth
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
-            sx={{ marginBottom: "16px" }} // Reduce margin bottom
+            sx={{ marginBottom: "16px" }}
           />
           <Button
             variant="contained"
@@ -558,8 +573,8 @@ const Dashboard: React.FC = () => {
       </Modal>
 
       {feedback && (
-        <Box sx={{ marginTop: "10px" }}> {/* Reduce margin top */}
-          <Typography variant="body2" color="textSecondary"> {/* Reduce font size */}
+        <Box sx={{ marginTop: "10px" }}>
+          <Typography variant="body2" color="textSecondary">
             {feedback}
           </Typography>
         </Box>
