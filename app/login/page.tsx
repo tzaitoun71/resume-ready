@@ -140,21 +140,24 @@ const LoginPage: React.FC = () => {
 
   return (
     <Container
-      maxWidth={false}
-      disableGutters
+      maxWidth={false} // Remove maxWidth constraint
+      disableGutters // Disable default padding
       sx={{
         minHeight: "100vh",
+        width: "100vw",  // Full viewport width
+        height: "100vh",  // Full viewport height
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         background: "linear-gradient(135deg, #f0f4ff 0%, #fafaff 100%)",
         textAlign: "center",
-        padding: "40px 20px",
+        padding: "20px",
+        boxSizing: "border-box", // Include padding in width/height calculations
       }}
     >
       {/* Header Section */}
-      <Box sx={{ marginBottom: "50px" }}>
+      <Box sx={{ marginBottom: "40px" }}>
         <Typography
           variant="h3"
           component="h1"
@@ -179,14 +182,12 @@ const LoginPage: React.FC = () => {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#ffffff",
-          padding: "40px",
+          padding: "30px",
           borderRadius: "12px",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
           marginBottom: "40px",
-          maxWidth: "400px",
           width: "100%",
-          height: "500px", // Ensures both forms have the same height
-          transition: "height 0.3s ease", // Smooth transition when switching forms
+          maxWidth: "400px", // Max width to ensure form is not too wide
         }}
       >
         {user ? (
@@ -304,24 +305,28 @@ const LoginPage: React.FC = () => {
         spacing={3}
         justifyContent="center"
         alignItems="stretch"
-        sx={{ maxWidth: "1200px" }}
+        sx={{ maxWidth: "900px" }}
       >
         {/* Feature Boxes */}
         <Grid item xs={12} sm={6} md={3} sx={{ display: "flex" }}>
           <Paper
             elevation={3}
             sx={{
-              padding: "30px",
+              padding: "20px",
               textAlign: "center",
               borderRadius: "12px",
               backgroundColor: "#ffffff",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
               flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "250px",  // Set consistent height
+              width: "100%",    // Set consistent width
             }}
           >
-            <CheckCircleOutlineIcon
-              sx={{ fontSize: 40, color: primaryColor }}
-            />
+            <CheckCircleOutlineIcon sx={{ fontSize: 40, color: primaryColor }} />
             <Typography
               variant="h6"
               sx={{ fontWeight: "bold", color: "#333", marginTop: "15px" }}
@@ -338,12 +343,18 @@ const LoginPage: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              padding: "30px",
+              padding: "20px",
               textAlign: "center",
               borderRadius: "12px",
               backgroundColor: "#ffffff",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
               flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "250px",  // Set consistent height
+              width: "100%",    // Set consistent width
             }}
           >
             <AssignmentIcon sx={{ fontSize: 40, color: primaryColor }} />
@@ -363,12 +374,18 @@ const LoginPage: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              padding: "30px",
+              padding: "20px",
               textAlign: "center",
               borderRadius: "12px",
               backgroundColor: "#ffffff",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
               flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "250px",  // Set consistent height
+              width: "100%",    // Set consistent width
             }}
           >
             <BarChartIcon sx={{ fontSize: 40, color: primaryColor }} />
@@ -388,12 +405,18 @@ const LoginPage: React.FC = () => {
           <Paper
             elevation={3}
             sx={{
-              padding: "30px",
+              padding: "20px",
               textAlign: "center",
               borderRadius: "12px",
               backgroundColor: "#ffffff",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
               flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "250px",  // Set consistent height
+              width: "100%",    // Set consistent width
             }}
           >
             <AssessmentIcon sx={{ fontSize: 40, color: primaryColor }} />
