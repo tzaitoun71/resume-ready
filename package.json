@@ -17,6 +17,7 @@
     "@mui/material": "^6.0.0",
     "@mui/styled-engine-sc": "^6.0.0",
     "@mui/styles": "^6.0.0",
+    "cheerio": "^1.0.0",
     "filepond": "^4.31.2",
     "firebase": "^10.13.0",
     "formidable": "^3.5.1",
