@@ -30,24 +30,25 @@ import SearchIcon from "@mui/icons-material/Search";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ImageIcon from "@mui/icons-material/Image";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import AddIcon from "@mui/icons-material/Add";
 import { useUser } from "../context/UserContext";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 
 const Dashboard: React.FC = () => {
   const { user, setUser, loading } = useUser();
   const [open, setOpen] = useState(false);
   const [openTextModal, setOpenTextModal] = useState(false);
+  const [openImageModal, setOpenImageModal] = useState(false); // Modal state for image upload
   const [jobDescription, setJobDescription] = useState("");
   const [feedback, setFeedback] = useState("");
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [applications, setApplications] = useState<any[]>([]);
   const [loadingApplications, setLoadingApplications] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter(); // Initialize router
@@ -58,12 +59,20 @@ const Dashboard: React.FC = () => {
   const handleOpenTextModal = () => setOpenTextModal(true);
   const handleCloseTextModal = () => setOpenTextModal(false);
 
+  const handleOpenImageModal = () => setOpenImageModal(true);
+  const handleCloseImageModal = () => {
+    setOpenImageModal(false);
+    setUploadedImage(null);
+    setImagePreviewUrl(null);
+  };
+
   useEffect(() => {
     if (!loading && user?.applications) {
       setApplications(
         user.applications.sort(
           (a: any, b: any) =>
-            new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+            new Date(b.dateCreated).getTime() -
+            new Date(a.dateCreated).getTime()
         )
       );
       setLoadingApplications(false);
@@ -119,7 +128,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDelete = async (event: React.MouseEvent, applicationId: string) => {
+  const handleDelete = async (
+    event: React.MouseEvent,
+    applicationId: string
+  ) => {
     event.stopPropagation(); // Prevent the click event from bubbling up to the row
     try {
       const response = await fetch("/api/applications/delete", {
@@ -183,6 +195,72 @@ const Dashboard: React.FC = () => {
     router.push(`/${userId}_${jobId}`);
   };
 
+  const handlePaste = (event: React.ClipboardEvent) => {
+    event.preventDefault(); // Prevent the default paste behavior to avoid inserting image in the text area.
+
+    const items = event.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf("image") === 0) {
+        const blob = item.getAsFile();
+        if (blob) {
+          setUploadedImage(blob);
+          setImagePreviewUrl(URL.createObjectURL(blob)); // Set image preview
+        }
+      }
+    }
+  };
+
+  const handleImageSubmit = async () => {
+    if (!uploadedImage) return;
+
+    setLoadingFeedback(true); // Set loading state
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedImage);
+      formData.append("userId", user.userId); // Append userId correctly
+
+      const response = await fetch("/api/resume/uploadImage", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        const newApplication = {
+          id: data.id,
+          companyName: data.companyName || "Not Specified",
+          position: data.position || "Not Specified",
+          location: data.location || "Not Specified",
+          status: "Application Submitted",
+          resumeFeedback: data.resumeFeedback || "",
+          coverLetter: "",
+          interviewQuestions: [],
+          dateCreated: new Date(),
+        };
+
+        setApplications((prevApps) => [newApplication, ...prevApps]);
+
+        const userResponse = await fetch(`/api/users/${user.userId}`);
+        if (userResponse.ok) {
+          const updatedUser = await userResponse.json();
+          setUser(updatedUser);
+        }
+
+        setFeedback("");
+      } else {
+        setFeedback("Failed to generate feedback.");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setFeedback("Error uploading image.");
+    } finally {
+      setLoadingFeedback(false); // Reset loading state
+      handleCloseImageModal();
+    }
+  };
+
   if (loading || loadingApplications) {
     return (
       <Box
@@ -210,11 +288,11 @@ const Dashboard: React.FC = () => {
 
   const formatDate = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     };
-    return new Intl.DateTimeFormat('en-US', options).format(new Date(date));
+    return new Intl.DateTimeFormat("en-US", options).format(new Date(date));
   };
 
   return (
@@ -283,7 +361,9 @@ const Dashboard: React.FC = () => {
                 margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <AssignmentIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
+              <AssignmentIcon
+                sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }}
+              />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {applications.length} Applications
               </Typography>
@@ -304,7 +384,9 @@ const Dashboard: React.FC = () => {
                 margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <PersonSearchIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
+              <PersonSearchIcon
+                sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }}
+              />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {
                   applications.filter((app) => app.status === "Interviewing")
@@ -329,12 +411,15 @@ const Dashboard: React.FC = () => {
                 margin: isSmallScreen ? "5px" : "10px",
               }}
             >
-              <ThumbUpAltIcon sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }} />
+              <ThumbUpAltIcon
+                sx={{ fontSize: isSmallScreen ? 25 : 30, color: "#4C51BF" }}
+              />
               <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
                 {
                   applications.filter(
                     (app) =>
-                      app.status === "Received Offer" || app.status === "Accepted Offer"
+                      app.status === "Received Offer" ||
+                      app.status === "Accepted Offer"
                   ).length
                 }{" "}
                 Offers
@@ -418,13 +503,15 @@ const Dashboard: React.FC = () => {
               </TableHead>
               <TableBody>
                 {filteredApplications.map((application, index) => (
-                  <TableRow 
+                  <TableRow
                     key={application.id}
                     sx={{
                       cursor: "pointer", // Change cursor on hover
-                      '&:hover': { backgroundColor: "#f0f4ff" }, // Change background color on hover
+                      "&:hover": { backgroundColor: "#f0f4ff" }, // Change background color on hover
                     }}
-                    onClick={() => navigateToJobDetails(user.userId, application.id)} // Navigate on click
+                    onClick={() =>
+                      navigateToJobDetails(user.userId, application.id)
+                    } // Navigate on click
                   >
                     <TableCell sx={{ py: 1 }}>
                       {application.companyName || "Not Specified"}
@@ -438,7 +525,10 @@ const Dashboard: React.FC = () => {
                     <TableCell sx={{ py: 1 }}>
                       {formatDate(application.dateCreated)}
                     </TableCell>
-                    <TableCell sx={{ py: 1 }} onClick={(event) => event.stopPropagation()}>
+                    <TableCell
+                      sx={{ py: 1 }}
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <FormControl fullWidth>
                         <Select
                           value={application.status}
@@ -463,7 +553,10 @@ const Dashboard: React.FC = () => {
                         </Select>
                       </FormControl>
                     </TableCell>
-                    <TableCell sx={{ py: 1 }} onClick={(event) => event.stopPropagation()}>
+                    <TableCell
+                      sx={{ py: 1 }}
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <IconButton
                         onClick={(event) => handleDelete(event, application.id)}
                         color="error"
@@ -491,7 +584,7 @@ const Dashboard: React.FC = () => {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: "90%",
-            maxWidth: 350,
+            maxWidth: 450, // Increase modal width
             bgcolor: "background.paper",
             boxShadow: 24,
             p: 3,
@@ -502,7 +595,7 @@ const Dashboard: React.FC = () => {
             Add a Position
           </Typography>
           <Grid container spacing={1} justifyContent="center">
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Box
                 sx={{
                   p: 1,
@@ -518,33 +611,13 @@ const Dashboard: React.FC = () => {
                     backgroundColor: "#f0f4ff",
                   },
                 }}
-              >
-                <CloudUploadIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
-                <Typography variant="body2">Upload URL</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={4}>
-              <Box
-                sx={{
-                  p: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "8px",
-                  boxShadow: 1,
-                  bgcolor: "white",
-                  cursor: "pointer",
-                  "&:hover": {
-                    backgroundColor: "#f0f4ff",
-                  },
-                }}
+                onClick={handleOpenImageModal} // Open Image Modal on click
               >
                 <ImageIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
                 <Typography variant="body2">Upload Image</Typography>
               </Box>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Box
                 sx={{
                   p: 1,
@@ -579,16 +652,19 @@ const Dashboard: React.FC = () => {
             left: "50%",
             transform: "translate(-50%, -50%)",
             width: "90%",
-            maxWidth: 350,
+            maxWidth: 400, // Match the width of the image modal
             bgcolor: "background.paper",
             boxShadow: 24,
             p: 3,
             borderRadius: "8px",
+            textAlign: "center", // Center the text within the modal
           }}
         >
           <Typography variant="h6" component="h2" gutterBottom>
             Enter Job Description
           </Typography>
+
+          {/* Job Description Text Field */}
           <TextField
             label="Job Description"
             multiline
@@ -596,16 +672,117 @@ const Dashboard: React.FC = () => {
             fullWidth
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
-            sx={{ marginBottom: "16px" }}
+            sx={{
+              mb: 2, // Use consistent margin with the image modal
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px", // Rounded corners like the image paste area
+              },
+            }}
           />
+
+          {/* Submit Button */}
           <Button
             variant="contained"
             color="primary"
             onClick={() => addApplication(jobDescription)}
             disabled={loadingFeedback}
-            sx={{ backgroundColor: "#4C51BF" }}
+            fullWidth
+            sx={{
+              backgroundColor: "#4C51BF", // Match the color scheme of the other modal
+              "&:hover": {
+                backgroundColor: "#3a42b1", // Slightly darker shade on hover
+              },
+            }}
           >
             {loadingFeedback ? "Generating..." : "Submit"}
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Modal for Upload Image */}
+      <Modal open={openImageModal} onClose={handleCloseImageModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "90%",
+            maxWidth: 400,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 3,
+            borderRadius: "8px",
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h6" component="h2" gutterBottom>
+            Paste an Image
+          </Typography>
+
+          {/* Paste Area */}
+          <Box
+            component="div"
+            sx={{
+              mb: 2,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              border: "1px dashed #4C51BF",
+              borderRadius: "8px",
+              p: 2,
+              minHeight: "50px",
+              cursor: "text",
+              overflow: "hidden",
+              textAlign: "center",
+              backgroundColor: "#f9f9f9",
+            }}
+            contentEditable // Allow the div to be editable to enable right-click paste
+            onPaste={handlePaste} // Handle pasting
+          >
+            <Typography variant="body2" color="textSecondary">
+              Ctrl + V or right-click to paste an image
+            </Typography>
+          </Box>
+
+          {/* Image Preview */}
+          {imagePreviewUrl && (
+            <Box
+              sx={{
+                mb: 2,
+                display: "flex",
+                justifyContent: "center", // Center the container horizontally
+                border: "1px dashed #4C51BF",
+                borderRadius: "8px",
+                p: 1,
+                maxWidth: "100px", // Set a fixed width to ensure centering
+                margin: "0 auto", // Center the box itself within the modal
+              }}
+            >
+              <img
+                src={imagePreviewUrl}
+                alt="Preview"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  objectFit: "contain",
+                  marginBottom: "20px",
+                }} // Adjust max width and object-fit
+              />
+            </Box>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleImageSubmit}
+            disabled={!uploadedImage || loadingFeedback} // Disable while loading
+            fullWidth
+            sx={{ backgroundColor: "#4C51BF", marginTop: "20px" }}
+          >
+            {loadingFeedback ? "Submitting..." : "Submit Image"}{" "}
+            {/* Show loading text */}
           </Button>
         </Box>
       </Modal>
