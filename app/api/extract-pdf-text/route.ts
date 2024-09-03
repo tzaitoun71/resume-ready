@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase'; // Import storage from Firebase configuration
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'; // Import PDFLoader from LangChain
 import fs from 'fs';
 import path from 'path';
@@ -26,23 +24,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Convert file to ArrayBuffer for Firebase upload
+    // Convert file to ArrayBuffer to handle it in memory
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
-    // Construct the file name using userId and original file name
-    const sanitizedFileName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase(); // Optional: sanitize file name
-    const storageRef = ref(storage, `files/${userId}_${sanitizedFileName}`);
-
-    // Upload the PDF to Firebase Storage under the 'files' folder
-    await uploadBytes(storageRef, buffer);
-    const fileUrl = await getDownloadURL(storageRef);
-
-    console.log('PDF uploaded to Firebase Storage:', fileUrl);
-
-    // Fetch the PDF file from Firebase Storage URL
-    const response = await fetch(fileUrl);
-    const pdfBuffer = await response.arrayBuffer();
 
     // Check if we are in a serverless environment and use the appropriate directory
     const tempDir = fs.existsSync('/tmp') ? '/tmp' : path.join(process.cwd(), 'temp');
@@ -53,8 +37,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Define a temporary path to save the PDF
+    const sanitizedFileName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase(); // Sanitize file name
     const tempFilePath = path.join(tempDir, `${userId}_${sanitizedFileName}`);
-    fs.writeFileSync(tempFilePath, Buffer.from(pdfBuffer));
+    fs.writeFileSync(tempFilePath, buffer); // Write the buffer directly to a file
 
     // Use LangChain's PDFLoader to extract text
     const loader = new PDFLoader(tempFilePath);
