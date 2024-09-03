@@ -55,6 +55,7 @@ const Dashboard: React.FC = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null); // Error state
 
   const handleOpen = () => {
     if (!user?.resume) {
@@ -227,7 +228,11 @@ const Dashboard: React.FC = () => {
     if (!uploadedImage) return;
 
     setLoadingFeedback(true); // Set loading state
+    setFeedback(""); // Reset feedback
+    setError(null); // Reset any existing error
+
     try {
+      // Step 1: Upload the image to the backend to extract text
       const formData = new FormData();
       formData.append("file", uploadedImage);
       formData.append("userId", user.userId); // Append userId correctly
@@ -237,36 +242,88 @@ const Dashboard: React.FC = () => {
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-
-        const newApplication = {
-          id: data.id,
-          companyName: data.companyName || "Not Specified",
-          position: data.position || "Not Specified",
-          location: data.location || "Not Specified",
-          status: "Application Submitted",
-          resumeFeedback: data.resumeFeedback || "",
-          coverLetter: "",
-          interviewQuestions: [],
-          dateCreated: new Date(),
-        };
-
-        setApplications((prevApps) => [newApplication, ...prevApps]);
-
-        const userResponse = await fetch(`/api/users/${user.userId}`);
-        if (userResponse.ok) {
-          const updatedUser = await userResponse.json();
-          setUser(updatedUser);
-        }
-
-        setFeedback("");
-      } else {
-        setFeedback("Failed to generate feedback.");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "Failed to upload image:",
+          response.statusText,
+          errorText
+        );
+        throw new Error("Failed to upload image and extract text");
       }
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      setFeedback("Error uploading image.");
+
+      const data = await response.json();
+      const extractedText = data.extractedText; // Get extracted text from the response
+
+      if (!extractedText) {
+        console.error("No text extracted from image.");
+        throw new Error("No text extracted from image.");
+      }
+
+      // Log extracted text for debugging
+      console.log("Extracted Text for Analysis:", extractedText);
+
+      // Step 2: Call the analyzeText API with the extracted text
+      const analyzeTextResponse = await fetch("/api/resume/analyzeText", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.userId,
+          jobDescription: extractedText,
+        }),
+      });
+
+      if (!analyzeTextResponse.ok) {
+        const errorText = await analyzeTextResponse.text();
+        console.error(
+          "Failed to analyze text:",
+          analyzeTextResponse.statusText,
+          errorText
+        );
+        throw new Error("Failed to analyze text");
+      }
+
+      const analyzeData = await analyzeTextResponse.json();
+
+      // Log the analyzeText response for debugging
+      console.log("AnalyzeText Response Data:", analyzeData);
+
+      // Step 3: Update applications and user data with the response from analyzeText
+      const newApplication = {
+        id: analyzeData.application.id,
+        companyName: analyzeData.application.companyName || "Not Specified",
+        position: analyzeData.application.position || "Not Specified",
+        location: analyzeData.application.location || "Not Specified",
+        status: analyzeData.application.status || "Application Submitted",
+        resumeFeedback: analyzeData.application.resumeFeedback || "",
+        coverLetter: analyzeData.application.coverLetter || "",
+        interviewQuestions: analyzeData.application.interviewQuestions || [],
+        dateCreated: new Date(),
+      };
+
+      setApplications((prevApps) => [newApplication, ...prevApps]);
+
+      const userResponse = await fetch(`/api/users/${user.userId}`);
+      if (!userResponse.ok) {
+        const errorText = await userResponse.text();
+        console.error(
+          "Failed to fetch user data:",
+          userResponse.statusText,
+          errorText
+        );
+        throw new Error("Failed to fetch updated user data");
+      }
+
+      const updatedUser = await userResponse.json();
+      setUser(updatedUser);
+
+      setFeedback("Application added successfully.");
+    } catch (error: any) {
+      console.error("Error during image upload and text analysis:", error);
+      setFeedback("An error occurred during the process.");
+      setError(error.message || "Internal error occurred.");
     } finally {
       setLoadingFeedback(false); // Reset loading state
       handleCloseImageModal();
@@ -814,7 +871,11 @@ const Dashboard: React.FC = () => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }} // Position the Snackbar at the top center
       >
-        <Alert onClose={handleSnackbarClose} severity="warning" sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
           Please upload your resume before adding a position.
         </Alert>
       </Snackbar>

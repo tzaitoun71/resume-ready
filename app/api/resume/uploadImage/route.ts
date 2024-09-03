@@ -33,26 +33,26 @@ export async function POST(req: Request) {
 
     // Extract text from the image using OpenAI or an OCR tool
     const extractTextResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Please extract the text from the following image and provide it in plain text:",
+      model: "gpt-4o-mini", 
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please extract the text from the following image and provide it in plain text:",
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl,
               },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageUrl
-                }
-              },
-            ]
-          },
-        ],
-        max_tokens: 300,
-      });
+            },
+          ],
+        },
+      ],
+      max_tokens: 300,
+    });
 
     const extractedText = extractTextResponse.choices?.[0]?.message?.content?.trim();
 
@@ -63,23 +63,9 @@ export async function POST(req: Request) {
     // Print the extracted text to the console
     console.log("Extracted Text from Image:", extractedText);
 
-    // Construct the full URL for the analyzeText endpoint
-    const host = req.headers.get('host');  // Get the host from request headers
-    const protocol = host?.startsWith('localhost') ? 'http' : 'https';  // Choose protocol based on host
-    const analyzeTextUrl = `${protocol}://${host}/api/resume/analyzeText`;
-
-    // Call the analyzeText endpoint with extracted job description
-    const analyzeResponse = await fetch(analyzeTextUrl, {  // Use constructed URL here
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userId, jobDescription: extractedText }),
-    });
-
-    const analyzeResult = await analyzeResponse.json();
-
-    return NextResponse.json(analyzeResult);
+    // Return the extracted text as a response
+    return NextResponse.json({ extractedText });
+    
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
