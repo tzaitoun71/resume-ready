@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Paper,
-} from '@mui/material';
+import { Container, Typography, Box, Button, Paper } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useUser } from '../context/UserContext';
 import ReactMarkdown from 'react-markdown';
@@ -48,7 +42,7 @@ const ResumePage: React.FC = () => {
         const data = await response.json();
 
         if (response.ok) {
-          const organizedText = data.organizedText;
+          const organizedText = data.scrapedText;
           if (organizedText) {
             console.log("Extracted PDF text Client Side:", organizedText);
             setResumeContent(organizedText);
@@ -95,7 +89,7 @@ const ResumePage: React.FC = () => {
           textAlign: 'center',
           borderRadius: '8px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-          width: hasResume ? '70vw' : '40vw',  // Adjust width for compact layout
+          width: hasResume ? '70vw' : '40vw',
           height: hasResume ? 'auto' : 'fit-content',
           maxHeight: hasResume ? '80vh' : 'none',
           overflowY: hasResume ? 'auto' : 'hidden',
@@ -105,7 +99,7 @@ const ResumePage: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#ffffff', // Ensure paper is white against the gradient
+          backgroundColor: '#ffffff',
         }}
       >
         {hasResume ? (
@@ -125,12 +119,12 @@ const ResumePage: React.FC = () => {
               <Box
                 sx={{
                   width: '100%',
-                  maxHeight: '60vh', // Further adjust to fit viewport height
+                  maxHeight: '60vh',
                   overflowY: 'auto',
                   overflowX: 'hidden',
                   border: '1px solid #ddd',
-                  padding: '15px', // Adjust padding for compactness
-                  marginBottom: '15px', // Adjust margin for compactness
+                  padding: '15px',
+                  marginBottom: '15px',
                   backgroundColor: '#ffffff',
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
                   textAlign: 'left',
@@ -184,7 +178,7 @@ const ResumePage: React.FC = () => {
             sx={{
               backgroundColor: '#4C51BF',
               color: '#fff',
-              padding: '8px 16px', // Adjust padding for compact button
+              padding: '8px 16px',
               borderRadius: '20px',
               '&:hover': {
                 backgroundColor: '#3b3f7a',
