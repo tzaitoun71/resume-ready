@@ -5,7 +5,7 @@ import clientPromise from '../../MongoDB';
 
 // Initialize OpenAI with API Key
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, 
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(req: Request) {
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File and userId are required' }, { status: 400 });
     }
 
-    // Convert file to ArrayBuffer and then to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Function to parse PDF and extract text as a Promise
@@ -31,11 +30,9 @@ export async function POST(req: Request) {
         pdfReader.parseBuffer(buffer, (err, item) => {
           if (err) {
             console.error("Error parsing PDF:", err);
-            reject(err); // Reject if there's an error
+            reject(err);
           } else if (!item) {
-            // End of PDF buffer
-            console.log("PDF text extraction completed.");
-            resolve(extractedText);
+            resolve(extractedText.trim()); // End of buffer, resolve promise
           } else if (item.text) {
             extractedText += `${item.text} `;
           }
