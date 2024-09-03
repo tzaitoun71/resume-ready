@@ -30,13 +30,15 @@ export async function POST(req: NextRequest) {
     const response = await fetch(fileUrl);
     const pdfBuffer = await response.arrayBuffer();
 
-    // Create a temporary directory if it does not exist
-    const tempDir = path.join(process.cwd(), 'temp');
-    if (!fs.existsSync(tempDir)) {
+    // Check if we are in a serverless environment and use the appropriate directory
+    const tempDir = process.env.NODE_ENV === 'production' ? '/tmp' : path.join(process.cwd(), 'temp');
+
+    // Create the temp directory if it doesn't exist (only needed locally)
+    if (tempDir !== '/tmp' && !fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir);
     }
 
-    // Define a temporary path in the current working directory to save the PDF
+    // Define a temporary path to save the PDF
     const tempFilePath = path.join(tempDir, `${Date.now()}_${file.name}`);
     fs.writeFileSync(tempFilePath, Buffer.from(pdfBuffer));
 
