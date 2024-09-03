@@ -42,15 +42,15 @@ const ResumePage: React.FC = () => {
         const data = await response.json();
 
         if (response.ok) {
-          const organizedText = data.scrapedText;
-          if (organizedText) {
-            console.log("Extracted PDF text Client Side:", organizedText);
-            setResumeContent(organizedText);
-            setUser({ ...user, resume: organizedText });
+          const extractedText = data.scrapedText;
+          if (extractedText) {
+            console.log("Extracted PDF text Client Side:", extractedText);
+            setResumeContent(extractedText);
+            setUser({ ...user, resume: extractedText });
             setHasResume(true);
             setResume(null);
           } else {
-            console.error('Organized text is undefined or empty');
+            console.error('Extracted text is undefined or empty');
           }
         } else {
           console.error('Failed to upload resume:', data.error);

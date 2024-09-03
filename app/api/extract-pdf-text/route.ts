@@ -1,42 +1,62 @@
-// app/api/extract-pdf-text/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from '../../firebase';
-const cheerio = require('cheerio');
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../firebase'; // Import storage from Firebase configuration
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'; // Import PDFLoader from LangChain
+import fs from 'fs';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
     // Parse the incoming FormData
     const formData = await req.formData();
-    const file = formData.get('file') as Blob | null;
+    const file = formData.get('file') as File | null; // Correctly cast as File to access 'name' property
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    // Convert file to ArrayBuffer for Firebase upload
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload the image to Firebase Storage
-    const storageRef = ref(storage, `images/${Date.now()}.png`);
-    const snapshot = await uploadBytes(storageRef, buffer);
-    const imageUrl = await getDownloadURL(snapshot.ref);
+    // Upload the PDF to Firebase Storage under the 'files' folder
+    const storageRef = ref(storage, `files/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, buffer);
+    const fileUrl = await getDownloadURL(storageRef);
 
-    console.log('Image uploaded to Firebase Storage:', imageUrl);
+    console.log('PDF uploaded to Firebase Storage:', fileUrl);
 
-    // Fetch the HTML page containing the image URL
-    const response = await fetch(imageUrl);
-    const html = await response.text();
+    // Fetch the PDF file from Firebase Storage URL
+    const response = await fetch(fileUrl);
+    const pdfBuffer = await response.arrayBuffer();
 
-    // Load the HTML into Cheerio for scraping
-    const $ = cheerio.load(html);
+    // Create a temporary directory if it does not exist
+    const tempDir = path.join(process.cwd(), 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir);
+    }
 
-    // Example: scrape the alt text of the image
-    const scrapedText = $('img').attr('alt') || 'No alt text found';
+    // Define a temporary path in the current working directory to save the PDF
+    const tempFilePath = path.join(tempDir, `${Date.now()}_${file.name}`);
+    fs.writeFileSync(tempFilePath, Buffer.from(pdfBuffer));
 
-    return NextResponse.json({ imageUrl, scrapedText });
+    // Use LangChain's PDFLoader to extract text
+    const loader = new PDFLoader(tempFilePath);
+    const docs = await loader.load();
+
+    // Extract text content from the loaded documents
+    const extractedText = docs.map(doc => doc.pageContent).join("\n");
+
+    // Clean up the temporary file after processing
+    fs.unlinkSync(tempFilePath);
+
+    if (!extractedText) {
+      return NextResponse.json({ error: 'Failed to extract text from PDF.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ fileUrl, scrapedText: extractedText });
   } catch (error) {
-    console.error('Error uploading image or scraping text:', error);
-    return NextResponse.json({ error: 'Failed to upload image or scrape text' }, { status: 500 });
+    console.error('Error uploading PDF or extracting text:', error);
+    return NextResponse.json({ error: 'Failed to upload PDF or extract text' }, { status: 500 });
   }
 }
