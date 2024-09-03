@@ -30,8 +30,11 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Construct the file name using userId and original file name
+    const sanitizedFileName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase(); // Optional: sanitize file name
+    const storageRef = ref(storage, `files/${userId}_${sanitizedFileName}`);
+
     // Upload the PDF to Firebase Storage under the 'files' folder
-    const storageRef = ref(storage, `files/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, buffer);
     const fileUrl = await getDownloadURL(storageRef);
 
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Define a temporary path to save the PDF
-    const tempFilePath = path.join(tempDir, `${Date.now()}_${file.name}`);
+    const tempFilePath = path.join(tempDir, `${userId}_${sanitizedFileName}`);
     fs.writeFileSync(tempFilePath, Buffer.from(pdfBuffer));
 
     // Use LangChain's PDFLoader to extract text
