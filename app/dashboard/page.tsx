@@ -24,6 +24,8 @@ import {
   InputAdornment,
   useMediaQuery,
   useTheme,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
@@ -33,7 +35,6 @@ import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ImageIcon from "@mui/icons-material/Image";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import AddIcon from "@mui/icons-material/Add";
-import LinkIcon from "@mui/icons-material/Link"; // Added LinkIcon for URL upload
 import { useUser } from "../context/UserContext";
 import { useRouter } from "next/navigation";
 
@@ -42,9 +43,7 @@ const Dashboard: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [openTextModal, setOpenTextModal] = useState(false);
   const [openImageModal, setOpenImageModal] = useState(false);
-  const [openUrlModal, setOpenUrlModal] = useState(false); // Modal state for URL upload
   const [jobDescription, setJobDescription] = useState("");
-  const [url, setUrl] = useState(""); // State for the URL input
   const [feedback, setFeedback] = useState("");
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [applications, setApplications] = useState<any[]>([]);
@@ -52,11 +51,19 @@ const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar state
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    if (!user?.resume) {
+      setSnackbarOpen(true); // Show snackbar if resume is not uploaded
+    } else {
+      setOpen(true); // Open modal if resume exists
+    }
+  };
+
   const handleClose = () => setOpen(false);
 
   const handleOpenTextModal = () => setOpenTextModal(true);
@@ -69,8 +76,7 @@ const Dashboard: React.FC = () => {
     setImagePreviewUrl(null);
   };
 
-  const handleOpenUrlModal = () => setOpenUrlModal(true); // Function to open URL modal
-  const handleCloseUrlModal = () => setOpenUrlModal(false); // Function to close URL modal
+  const handleSnackbarClose = () => setSnackbarOpen(false); // Close snackbar
 
   useEffect(() => {
     if (!loading && user?.applications) {
@@ -264,55 +270,6 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoadingFeedback(false); // Reset loading state
       handleCloseImageModal();
-    }
-  };
-
-  const handleUrlSubmit = async () => {
-    if (!url) return;
-
-    setLoadingFeedback(true); // Set loading state
-    try {
-      const response = await fetch("/api/resume/uploadUrl", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.userId, url }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        const newApplication = {
-          id: data.id,
-          companyName: data.companyName || "Not Specified",
-          position: data.position || "Not Specified",
-          location: data.location || "Not Specified",
-          status: "Application Submitted",
-          resumeFeedback: data.resumeFeedback || "",
-          coverLetter: "",
-          interviewQuestions: [],
-          dateCreated: new Date(),
-        };
-
-        setApplications((prevApps) => [newApplication, ...prevApps]);
-
-        const userResponse = await fetch(`/api/users/${user.userId}`);
-        if (userResponse.ok) {
-          const updatedUser = await userResponse.json();
-          setUser(updatedUser);
-        }
-
-        setFeedback("");
-      } else {
-        setFeedback("Failed to generate feedback.");
-      }
-    } catch (error) {
-      console.error("Error submitting URL:", error);
-      setFeedback("Error submitting URL.");
-    } finally {
-      setLoadingFeedback(false); // Reset loading state
-      handleCloseUrlModal();
     }
   };
 
@@ -650,7 +607,7 @@ const Dashboard: React.FC = () => {
             Add a Position
           </Typography>
           <Grid container spacing={1} justifyContent="center">
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Box
                 sx={{
                   p: 1,
@@ -672,7 +629,7 @@ const Dashboard: React.FC = () => {
                 <Typography variant="body2">Upload Image</Typography>
               </Box>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Box
                 sx={{
                   p: 1,
@@ -692,28 +649,6 @@ const Dashboard: React.FC = () => {
               >
                 <TextFieldsIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
                 <Typography variant="body2">Upload Text</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={4}>
-              <Box
-                sx={{
-                  p: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "8px",
-                  boxShadow: 1,
-                  bgcolor: "white",
-                  cursor: "pointer",
-                  "&:hover": {
-                    backgroundColor: "#f0f4ff",
-                  },
-                }}
-                onClick={handleOpenUrlModal} // Open URL Modal on click
-              >
-                <LinkIcon sx={{ fontSize: 25, color: "#4C51BF" }} />
-                <Typography variant="body2">Upload URL</Typography>
               </Box>
             </Grid>
           </Grid>
@@ -864,60 +799,6 @@ const Dashboard: React.FC = () => {
         </Box>
       </Modal>
 
-      {/* Modal for Upload URL */}
-      <Modal open={openUrlModal} onClose={handleCloseUrlModal}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "90%",
-            maxWidth: 400, // Match the width of the image modal
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 3,
-            borderRadius: "8px",
-            textAlign: "center", // Center the text within the modal
-          }}
-        >
-          <Typography variant="h6" component="h2" gutterBottom>
-            Enter Job Description URL
-          </Typography>
-
-          {/* URL Input Field */}
-          <TextField
-            label="Job Description URL"
-            fullWidth
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            sx={{
-              mb: 2, // Use consistent margin with the image modal
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px", // Rounded corners like the image paste area
-              },
-            }}
-          />
-
-          {/* Submit Button */}
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleUrlSubmit}
-            disabled={loadingFeedback}
-            fullWidth
-            sx={{
-              backgroundColor: "#4C51BF", // Match the color scheme of the other modal
-              "&:hover": {
-                backgroundColor: "#3a42b1", // Slightly darker shade on hover
-              },
-            }}
-          >
-            {loadingFeedback ? "Submitting..." : "Submit URL"}
-          </Button>
-        </Box>
-      </Modal>
-
       {feedback && (
         <Box sx={{ marginTop: "10px" }}>
           <Typography variant="body2" color="textSecondary">
@@ -925,6 +806,18 @@ const Dashboard: React.FC = () => {
           </Typography>
         </Box>
       )}
+
+      {/* Snackbar for alert */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }} // Position the Snackbar at the top center
+      >
+        <Alert onClose={handleSnackbarClose} severity="warning" sx={{ width: '100%' }}>
+          Please upload your resume before adding a position.
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

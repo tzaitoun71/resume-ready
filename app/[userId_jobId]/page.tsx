@@ -8,20 +8,19 @@ import {
   Container,
   Tabs,
   Tab,
+  Tooltip,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import LockIcon from "@mui/icons-material/Lock";
 import { useUser } from "../context/UserContext";
 import ResumeFeedback from "../components/ResumeFeedback";
 import CoverLetter from "../components/CoverLetter";
 import InterviewQuestions from "../components/InterviewQuestions";
 
 const JobDetails: React.FC = () => {
-  // Use useParams to extract dynamic route parameters
   const params = useParams();
   const { userId_jobId } = params as { userId_jobId: string };
-
-  // Split the combined `userId_jobId` into separate variables
   const [userId, jobId] = userId_jobId.split("_");
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState(0);
@@ -29,10 +28,12 @@ const JobDetails: React.FC = () => {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+    if (user.membership === "free" && (newValue === 1 || newValue === 2)) {
+      return; // Prevent navigation for "free" members
+    }
+    setActiveTab(newValue); // Allow navigation for "plus" members
   };
 
-  // Find the application by jobId
   const application = user?.applications.find((app: any) => app.id === jobId);
 
   return (
@@ -50,17 +51,16 @@ const JobDetails: React.FC = () => {
         paddingTop: isSmallScreen ? "60px" : "80px",
         paddingBottom: isSmallScreen ? "40px" : "60px",
         boxSizing: "border-box",
-        overflow: "auto", // Allow scrolling for the container
+        overflow: "auto",
       }}
     >
-      {/* Main Box */}
       <Box
         sx={{
           width: isSmallScreen ? "95%" : "80%",
           maxWidth: "1400px",
           minWidth: isSmallScreen ? "90%" : "80%",
-          height: "85vh", // Set a specific height for the main box to enforce scrolling
-          maxHeight: "85vh", // Limit height to 85% of viewport height
+          height: "85vh",
+          maxHeight: "85vh",
           borderRadius: "8px",
           boxShadow: 2,
           bgcolor: "white",
@@ -70,7 +70,7 @@ const JobDetails: React.FC = () => {
           justifyContent: "flex-start",
           alignItems: "center",
           marginTop: isSmallScreen ? "10px" : "20px",
-          overflowY: "auto", // Enable vertical scrolling
+          overflowY: "auto",
           marginBottom: "40px",
         }}
       >
@@ -78,17 +78,15 @@ const JobDetails: React.FC = () => {
           {application?.companyName}
         </Typography>
         <Typography variant="h6" component="h2" gutterBottom>
-          {application?.position} -{" "}
+          {application?.position} - {application?.location} -{" "}
           <span style={{ color: "#4C51BF", fontWeight: "bold" }}>
             {application?.status}
           </span>
         </Typography>
-        {/* Preserve original spacing for job description */}
         <Typography variant="body1" sx={{ mb: 3, whiteSpace: "pre-line" }}>
           {application?.jobDescription}
         </Typography>
 
-        {/* Tabs for Resume Feedback, Cover Letters, Interview Questions */}
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -100,24 +98,57 @@ const JobDetails: React.FC = () => {
             label="RESUME FEEDBACK"
             sx={{ color: activeTab === 0 ? "#4C51BF" : "gray" }}
           />
-          <Tab
-            label="COVER LETTER"
-            sx={{ color: activeTab === 1 ? "#4C51BF" : "gray" }}
-          />
-          <Tab
-            label="INTERVIEW QUESTIONS"
-            sx={{ color: activeTab === 2 ? "#4C51BF" : "gray" }}
-          />
+          {user.membership === "free" ? (
+            <Tooltip title="Upgrade to Plus for access" placement="top">
+              <Box display="flex" alignItems="center">
+                <Tab
+                  label={
+                    <Box display="flex" alignItems="center">
+                      COVER LETTER
+                      <LockIcon fontSize="small" sx={{ ml: 1, color: "gray" }} />
+                    </Box>
+                  }
+                  sx={{ color: "gray" }}
+                  disabled
+                />
+              </Box>
+            </Tooltip>
+          ) : (
+            <Tab
+              label="COVER LETTER"
+              sx={{ color: activeTab === 1 ? "#4C51BF" : "gray" }}
+            />
+          )}
+          {user.membership === "free" ? (
+            <Tooltip title="Upgrade to Plus for access" placement="top">
+              <Box display="flex" alignItems="center">
+                <Tab
+                  label={
+                    <Box display="flex" alignItems="center">
+                      INTERVIEW QUESTIONS
+                      <LockIcon fontSize="small" sx={{ ml: 1, color: "gray" }} />
+                    </Box>
+                  }
+                  sx={{ color: "gray" }}
+                  disabled
+                />
+              </Box>
+            </Tooltip>
+          ) : (
+            <Tab
+              label="INTERVIEW QUESTIONS"
+              sx={{ color: activeTab === 2 ? "#4C51BF" : "gray" }}
+            />
+          )}
         </Tabs>
 
-        {/* Content Box for Tabs */}
         <Box
           sx={{
             width: "100%",
-            overflowY: "auto", // Enable vertical scrolling
+            overflowY: "auto",
             flexGrow: 1,
-            paddingRight: "16px", // Add padding to avoid scrollbar overlap
-            maxHeight: "60vh", // Limit height to ensure scrolling is needed
+            paddingRight: "16px",
+            maxHeight: "60vh",
           }}
         >
           {activeTab === 0 && (
