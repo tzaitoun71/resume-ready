@@ -96,34 +96,85 @@ const InterviewQuestions: React.FC<InterviewQuestionsProps> = ({ interviewQuesti
         <Select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          sx={{ minWidth: 120 }}
+          sx={{
+            minWidth: 120,
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#4C51BF',
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#4C51BF',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#4C51BF',
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#4C51BF',
+            }
+          }}
         >
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="Behavioral">Behavioral</MenuItem>
-          <MenuItem value="Technical">Technical</MenuItem>
-        </Select>
-        <Button onClick={handleOpen}>ADD MORE QUESTIONS</Button>
-      </Box>
+        <MenuItem value="all">All</MenuItem>
+        <MenuItem value="Behavioral">Behavioral</MenuItem>
+        <MenuItem value="Technical">Technical</MenuItem>
+      </Select>
+      <Button 
+        onClick={handleOpen} 
+        sx={{ 
+          backgroundColor: '#4C51BF', 
+          color: 'white', 
+          '&:hover': { 
+            backgroundColor: '#3b3e9f' 
+          }
+        }}
+      >
+        ADD MORE QUESTIONS
+      </Button>      
 
-      <Modal open={open} onClose={handleClose}>
-        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Select Question Type</Typography>
-          <FormControl fullWidth>
-            <InputLabel>Type</InputLabel>
-            <Select
-              value={questionType}
-              onChange={(e) => setQuestionType(e.target.value)}
-              label="Type"
-            >
-              <MenuItem value="Behavioral">Behavioral</MenuItem>
-              <MenuItem value="Technical">Technical</MenuItem>
-            </Select>
-          </FormControl>
-          <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={addMoreQuestions}>
-            Generate Questions
-          </Button>
-        </Box>
-      </Modal>
+    </Box>
+    <Modal open={open} onClose={handleClose}>
+      <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>Select Question Type</Typography>
+        <FormControl fullWidth>
+          <InputLabel sx={{ color: '#4C51BF' }}>Type</InputLabel>
+          <Select
+            value={questionType}
+            onChange={(e) => setQuestionType(e.target.value)}
+            label="Type"
+            sx={{
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#4C51BF',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#4C51BF',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#4C51BF',
+              },
+              '& .MuiSvgIcon-root': {
+                color: '#4C51BF',
+              }
+            }}
+          >
+            <MenuItem value="Behavioral">Behavioral</MenuItem>
+            <MenuItem value="Technical">Technical</MenuItem>
+          </Select>
+        </FormControl>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          sx={{ 
+            mt: 2, 
+            backgroundColor: '#4C51BF', 
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#3b3e9f' 
+            }
+          }} 
+          onClick={addMoreQuestions}
+        >
+          Generate Questions
+        </Button>
+      </Box>
+    </Modal>
 
       {filteredQuestions.length ? (
         filteredQuestions.map((q, index) => (
