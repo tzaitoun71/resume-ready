@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Button, Select, MenuItem, Modal, FormControl, InputLabel } from "@mui/material";
+import { useUser } from "../context/UserContext"; 
+import { useParams } from "next/navigation"; 
 
 interface InterviewQuestion {
   type: string;
@@ -14,37 +16,77 @@ interface InterviewQuestionsProps {
 const InterviewQuestions: React.FC<InterviewQuestionsProps> = ({ interviewQuestions }) => {
   const [filter, setFilter] = useState<string>("all");
   const [filteredQuestions, setFilteredQuestions] = useState<InterviewQuestion[]>([]);
-  const [open, setOpen] = useState(false); 
-  const [questionType, setQuestionType] = useState<string>("Behavioral"); 
+  const [open, setOpen] = useState(false);
+  const [questionType, setQuestionType] = useState<string>("Behavioral");
+  const { user } = useUser(); 
+  const params = useParams();
+  const { userId_jobId } = params as { userId_jobId: string };
+  const [userId, jobId] = userId_jobId.split("_");
+
+  const application = user?.applications.find((app: { id: string; jobDescription: string; interviewQuestions: InterviewQuestion[] }) => app.id === jobId);
+
+  useEffect(() => {
+    if (application?.interviewQuestions) {
+      setFilteredQuestions(application.interviewQuestions);
+    }
+  }, [application]);
 
   useEffect(() => {
     if (filter === "all") {
-      setFilteredQuestions(interviewQuestions || []);
+      setFilteredQuestions(application?.interviewQuestions || []);
     } else {
       setFilteredQuestions(
-        interviewQuestions?.filter((q) => q.type === filter) || []
+        application?.interviewQuestions.filter((q: InterviewQuestion) => q.type === filter) || []
       );
     }
-  }, [filter, interviewQuestions]);
+  }, [filter, application]);  
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false); 
+  const handleClose = () => setOpen(false);
 
   const addMoreQuestions = async () => {
-    const response = await fetch("/api/resume/analyzeText", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ type: questionType }),
-    });
+    if (!userId || !application) {
+      console.error("Missing userId or application data.");
+      return;
+    }
 
-    if (response.ok) {
+    const payload = {
+      userId: userId,
+      jobId: application.id,  
+      jobDescription: application.jobDescription,
+      questionType,
+      numQuestions: 3,
+    };
+
+    try {
+      const response = await fetch("/api/generateQuestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Response Error:', errorData);
+        return;
+      }
+
       const newQuestions = await response.json();
-      setFilteredQuestions((prevQuestions) => [...prevQuestions, ...newQuestions]);
-      handleClose(); 
-    } else {
-      console.error("Failed to fetch new questions.");
+      console.log('API Response:', newQuestions);
+
+      if (newQuestions && newQuestions.newQuestions) {
+        setFilteredQuestions((prevQuestions) => [...prevQuestions, ...newQuestions.newQuestions]);
+
+        application.interviewQuestions = [...application.interviewQuestions, ...newQuestions.newQuestions];
+
+        handleClose(); 
+      } else {
+        console.error("Invalid response format");
+      }
+    } catch (error) {
+      console.error("Error fetching new questions:", error);
     }
   };
 
@@ -63,7 +105,6 @@ const InterviewQuestions: React.FC<InterviewQuestionsProps> = ({ interviewQuesti
         <Button onClick={handleOpen}>ADD MORE QUESTIONS</Button>
       </Box>
 
-      {/* Modal for selecting question type */}
       <Modal open={open} onClose={handleClose}>
         <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Select Question Type</Typography>
