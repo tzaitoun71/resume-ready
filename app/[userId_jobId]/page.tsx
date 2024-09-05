@@ -51,7 +51,7 @@ const JobDetails: React.FC = () => {
         paddingTop: isSmallScreen ? "60px" : "80px",
         paddingBottom: isSmallScreen ? "40px" : "60px",
         boxSizing: "border-box",
-        overflow: "auto",
+        overflow: "hidden",
       }}
     >
       <Box
@@ -59,7 +59,7 @@ const JobDetails: React.FC = () => {
           width: isSmallScreen ? "95%" : "80%",
           maxWidth: "1400px",
           minWidth: isSmallScreen ? "90%" : "80%",
-          height: "85vh",
+          height: "calc(100vh - 180px)", 
           maxHeight: "85vh",
           borderRadius: "8px",
           boxShadow: 2,
@@ -71,6 +71,7 @@ const JobDetails: React.FC = () => {
           alignItems: "center",
           marginTop: isSmallScreen ? "10px" : "20px",
           overflowY: "auto",
+          overflowX: "hidden", 
           marginBottom: "40px",
         }}
       >
