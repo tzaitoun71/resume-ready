@@ -25,7 +25,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body>
+      <body style={{ overflow: 'hidden'}}>
         {/* Wrap all children in UserProvider to ensure context is available everywhere */}
         <UserProvider>
           {pathname !== '/' && pathname !== '/login' ? <Navbar /> : null} {/* Conditionally render Navbar */}
