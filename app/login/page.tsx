@@ -198,94 +198,135 @@ const LoginPage: React.FC = () => {
 
         {/* Login/Signup Form Section */}
         <Box
-  sx={{
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#ffffff",
-    padding: { xs: "15px", sm: "20px", md: "30px" }, // Reduce padding on smaller screens
-    borderRadius: "12px",
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-    width: "100%",
-    maxWidth: { xs: "90%", sm: "400px", md: "500px" }, // Responsive width
-    maxHeight: { xs: "40vh", sm: "50vh", md: "60vh" }, // Further reduce maxHeight
-    overflowY: "auto", // Enable scrolling if necessary
-    transition: "max-height 0.3s ease",
-  }}
->
-  {/* Inside the form, make sure margins and paddings are reduced */}
-  <Typography
-    variant="h5"
-    sx={{
-      fontWeight: "bold",
-      color: "#333",
-      marginBottom: { xs: "10px", sm: "15px" }, // Reduce marginBottom on small screens
-      fontSize: { xs: "1.5rem", md: "2rem" }, // Smaller font size for smaller screens
-    }}
-  >
-    {isSignup ? "Sign Up" : "Log In"}
-  </Typography>
-
-  {/* Example of adjusting form fields */}
-  <TextField
-    label="Email Address"
-    fullWidth
-    variant="outlined"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    required
-    sx={{
-      marginBottom: { xs: "10px", sm: "15px" }, // Reduce margin between fields
-      fontSize: { xs: "14px", sm: "16px" }, // Adjust font size for smaller screens
-    }}
-  />
-  <TextField
-    label="Password"
-    fullWidth
-    variant="outlined"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    required
-    sx={{
-      marginBottom: { xs: "10px", sm: "15px" }, // Reduce margin
-      fontSize: { xs: "14px", sm: "16px" },
-    }}
-  />
-
-  <Button
-    onClick={handleSubmit}
-    variant="contained"
-    sx={{
-      backgroundColor: primaryColor,
-      color: "#fff",
-      padding: { xs: "8px 20px", sm: "10px 30px" }, // Reduce padding on buttons
-      borderRadius: "20px", // Reduce border radius for smaller buttons
-      marginBottom: { xs: "10px", sm: "20px" }, // Smaller margin at bottom
-    }}
-  >
-    {isSignup ? "Sign Up" : "Log In"}
-  </Button>
-
-  <Button
-    onClick={() => setIsSignup(!isSignup)}
-    sx={{
-      textTransform: "none",
-      color: primaryColor,
-      fontSize: { xs: "14px", sm: "16px" }, // Smaller font size
-      "&:hover": {
-        backgroundColor: "#f0f0ff",
-        color: "#3b3f7a",
-      },
-    }}
-  >
-    {isSignup
-      ? "Already have an account? Log In"
-      : "Don't have an account? Sign Up"}
-  </Button>
-</Box>
-
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#ffffff",
+            padding: "30px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+            marginBottom: "20px",
+            width: "100%",
+            maxWidth: "400px",
+            maxHeight: "60vh", // Set maximum height
+            overflowY: "auto", // Enable vertical scrolling inside the form
+            transition: "max-height 0.3s ease",
+          }}
+        >
+          {user ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleSignOut}
+              sx={{
+                padding: "10px 30px",
+                borderRadius: "30px",
+                backgroundColor: "#d32f2f",
+                color: "#fff",
+                "&:hover": {
+                  backgroundColor: "#9a0007",
+                },
+              }}
+            >
+              Sign Out
+            </Button>
+          ) : (
+            <>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: "bold", color: "#333", marginBottom: "20px" }}
+              >
+                {isSignup ? "Sign Up" : "Log In"}
+              </Typography>
+              {errorMessage && (
+                <Typography color="error" sx={{ marginBottom: "20px" }}>
+                  {errorMessage}
+                </Typography>
+              )}
+              {isSignup && (
+                <Grid container spacing={2} sx={{ marginBottom: "20px" }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="First Name"
+                      type="text"
+                      fullWidth
+                      variant="outlined"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Last Name"
+                      type="text"
+                      fullWidth
+                      variant="outlined"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                </Grid>
+              )}
+              <TextField
+                label="Email Address"
+                type="email"
+                fullWidth
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                sx={{ marginBottom: "20px" }}
+              />
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                sx={{ marginBottom: "20px" }}
+              />
+              <Button
+                onClick={handleSubmit}
+                variant="contained"
+                sx={{
+                  backgroundColor: primaryColor,
+                  color: "#fff",
+                  padding: "10px 30px",
+                  borderRadius: "30px",
+                  marginBottom: "20px",
+                  "&:hover": {
+                    backgroundColor: "#3b3f7a",
+                  },
+                }}
+              >
+                {isSignup ? "Sign Up" : "Log In"}
+              </Button>
+              <Button
+                onClick={() => setIsSignup(!isSignup)}
+                sx={{
+                  textTransform: "none",
+                  color: primaryColor,
+                  "&:hover": {
+                    backgroundColor: "#f0f0ff",
+                    color: "#3b3f7a",
+                  },
+                }}
+              >
+                {isSignup
+                  ? "Already have an account? Log In"
+                  : "Don't have an account? Sign Up"}
+              </Button>
+            </>
+          )}
+        </Box>
       </Box>
+
 
       {/* Features Section */}
       <Grid
