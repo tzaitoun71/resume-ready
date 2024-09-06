@@ -91,7 +91,7 @@ const ProfilePage: React.FC = () => {
           borderRadius: "12px",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
           width: hasResume ? "80vw" : "30vw",
-          height: hasResume ? "auto" : "fit-content",
+          height: hasResume ? "calc(100vh - 200px)"  : "fit-content",
           maxHeight: hasResume ? "90vh" : "none",
           overflowY: hasResume ? "auto" : "hidden",
           overflowX: "hidden",
