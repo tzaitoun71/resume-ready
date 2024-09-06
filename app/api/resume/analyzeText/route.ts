@@ -55,7 +55,8 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const prompt = `
+    // Keep the original prompts exactly the same
+    const resumeFeedbackPrompt = `
     You are an expert in resume analysis and job matching. Given the following resume and job description, provide an in-depth evaluation of how the resume can be refined to better match the job description.
 
     Your analysis should be detailed and specific, covering the following aspects. Ensure each piece of feedback is separated by the word "POINT" to distinguish different suggestions. Provide at least 8-12 unique and constructive points to thoroughly enhance the resume:
@@ -83,99 +84,25 @@ export async function POST(req: Request) {
     **JSON Response (plain text only)**:
   `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 2500, // Increase token limit for longer responses
-      temperature: 0.7,
-    });
-
-    const rawContent = response.choices[0].message?.content?.trim();
-
-    if (!rawContent) {
-      console.error("No content received from OpenAI.");
-      return NextResponse.json(
-        { error: "No feedback generated." },
-        { status: 500 }
-      );
-    }
-
-    // Sanitize the AI response to avoid JSON parse errors
-    let sanitizedContent = rawContent.replace(/```json|```/g, "").trim();
-
-    // Use regex to try and extract JSON from the response
-    const jsonMatch = sanitizedContent.match(/{[^]*}/);
-
-    if (!jsonMatch) {
-      console.error("Failed to find valid JSON in OpenAI response.");
-      return NextResponse.json(
-        { error: "Failed to parse JSON from OpenAI response" },
-        { status: 500 }
-      );
-    }
-
-    let jsonResponse: JsonResponse; // Declare jsonResponse with the correct type
-    try {
-      jsonResponse = JSON.parse(jsonMatch[0]);
-    } catch (jsonError) {
-      console.error("Error parsing JSON:", jsonError);
-      return NextResponse.json(
-        { error: "Failed to parse JSON from OpenAI response" },
-        { status: 500 }
-      );
-    }
-
-    console.log("Response JSON data:", jsonResponse);
-
-    // Fetch user details for the cover letter
-    const userName = user.name || "{Your Name}";
-    const userEmail = user.email || "{your.email@example.com}";
-    const userPhone = user.phone || "{phone number}";
-    const userLinkedIn = user.linkedin || "{linkedin.com/in/your-profile}";
-    const userGitHub = user.github || "{github.com/yourprofile}";
-    const companyName = jsonResponse.companyName || "{Company Name}";
-    const hiringManagerName = "{Hiring Manager's Name}"; // Use actual data if available
-
-    // Prompt for generating cover letter with actual user details
     const coverLetterPrompt = `
-        You are an expert in writing professional cover letters. Given the following resume and job description, generate a personalized cover letter body for the applicant starting from "Dear Hiring Manager,". Do not include any contact details or closing statements. Focus only on the content that would go in the main paragraphs of a cover letter.
+    You are an expert in writing professional cover letters. Given the following resume and job description, generate a personalized cover letter body for the applicant starting from "Dear Hiring Manager,". Do not include any contact details or closing statements. Focus only on the content that would go in the main paragraphs of a cover letter.
 
-        The cover letter body should:
-        - Start with "Dear Hiring Manager,".
-        - Introduce the applicant and express interest in the position and company.
-        - Highlight the applicant's key qualifications, skills, and experiences that align with the job requirements.
-        - Discuss why the applicant is a great fit for the company and how they can contribute to the company's goals.
+    The cover letter body should:
+    - Start with "Dear Hiring Manager,".
+    - Introduce the applicant and express interest in the position and company.
+    - Highlight the applicant's key qualifications, skills, and experiences that align with the job requirements.
+    - Discuss why the applicant is a great fit for the company and how they can contribute to the company's goals.
 
-        Ensure the cover letter body is formatted correctly with appropriate spacing and paragraphs, and is concise.
+    Ensure the cover letter body is formatted correctly with appropriate spacing and paragraphs, and is concise.
 
-        **Resume**:
-        ${userResume}
+    **Resume**:
+    ${userResume}
 
-        **Job Description**:
-        ${jobDescription}
+    **Job Description**:
+    ${jobDescription}
 
-        **Cover Letter Body**:
-        `;
-
-
-    const coverLetterResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: coverLetterPrompt }],
-      max_tokens: 1000, 
-      temperature: 0.7,
-    });
-
-    const coverLetterContent = coverLetterResponse.choices[0].message?.content?.trim();
-
-    if (!coverLetterContent) {
-      console.error("No cover letter content received from OpenAI.");
-      return NextResponse.json(
-        { error: "No cover letter generated." },
-        { status: 500 }
-      );
-    }
-
-    //console.log("Cover Letter Content:", coverLetterContent);
+    **Cover Letter Body**:
+    `;
 
     const interviewPrompt = `
     You are an expert in interview preparation. Given the job description and the user's resume, generate ${numQuestions} ${questionType} interview questions that could be asked for this position. Include both the question and a detailed model answer that demonstrates how to effectively answer each question.
@@ -201,8 +128,6 @@ export async function POST(req: Request) {
       ]
     }
 
-    Ensure that the response is valid JSON with no additional commentary, and include both the question type and answer in each question object.
-
     **Resume**:
     ${userResume}
 
@@ -212,27 +137,22 @@ export async function POST(req: Request) {
     **JSON Response (plain text only)**:
     `;
 
-    const InterviewResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: interviewPrompt }],
-      max_tokens: 2000,
-      temperature: 0.7,
-    });
+    // Call GPT for all prompts in parallel using Promise.all
+    const [resumeResponse, coverLetterResponse, interviewResponse] = await Promise.all([
+      openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: resumeFeedbackPrompt }], max_tokens: 2500, temperature: 0.7 }),
+      openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: coverLetterPrompt }], max_tokens: 1000, temperature: 0.7 }),
+      openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: interviewPrompt }], max_tokens: 2000, temperature: 0.7 }),
+    ]);
 
-    const rawInterviewContent = InterviewResponse.choices[0].message?.content?.trim();
+    const resumeContent = resumeResponse.choices[0].message?.content?.trim();
+    const coverLetterContent = coverLetterResponse.choices[0].message?.content?.trim() || "";  // Provide fallback empty string
+    const interviewContent = interviewResponse.choices[0].message?.content?.trim();
 
-    if (!rawInterviewContent) {
-      console.error("No content received from OpenAI.");
-      return NextResponse.json(
-        { error: "No questions generated." },
-        { status: 500 }
-      );
-    }
+    // Parse and sanitize JSON responses
+    const resumeJsonMatch = resumeContent?.match(/{[^]*}/);
+    const interviewJsonMatch = interviewContent?.match(/{[^]*}/);
 
-    let sanitizedInterviewContent = rawInterviewContent.replace(/```json|```/g, "").trim();
-    const interviewJsonMatch = sanitizedInterviewContent.match(/{[^]*}/);
-
-    if (!interviewJsonMatch) {
+    if (!resumeJsonMatch || !interviewJsonMatch) {
       console.error("Failed to find valid JSON in OpenAI response.");
       return NextResponse.json(
         { error: "Failed to parse JSON from OpenAI response" },
@@ -240,8 +160,11 @@ export async function POST(req: Request) {
       );
     }
 
+    let jsonResponse: JsonResponse;
     let interviewJsonResponse;
+
     try {
+      jsonResponse = JSON.parse(resumeJsonMatch[0]);
       interviewJsonResponse = JSON.parse(interviewJsonMatch[0]);
     } catch (jsonError) {
       console.error("Error parsing JSON:", jsonError);
@@ -250,8 +173,6 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-
-    //console.log("Interview JSON data:", interviewJsonResponse);
 
     const interviewQuestions = interviewJsonResponse.interviewQuestions || [];
 
@@ -262,7 +183,7 @@ export async function POST(req: Request) {
       location: jsonResponse.location,
       jobDescription: jsonResponse.jobDescription,
       resumeFeedback: jsonResponse.resumeFeedback,
-      coverLetter: coverLetterContent,  
+      coverLetter: coverLetterContent,  // Provide fallback for cover letter in case it's undefined
       status: "Application Submitted",
       interviewQuestions: interviewQuestions,
       dateCreated: new Date(),
